@@ -11,10 +11,10 @@
 [ext_resource type="PackedScene" path="res://scenes/AmongUs.tscn" id="9_egg"]
 [ext_resource type="Script" uid="uid://50y2aaebc4vv" path="res://scripts/OceanSession.gd" id="10_session"]
 [ext_resource type="Script" uid="uid://c5sjs2t4drhx2" path="res://scripts/SoundHub.gd" id="11_sound"]
-[ext_resource type="Texture2D" path="res://assets/art/cebo icono.png" id="12_bait_icon"]
-[ext_resource type="Texture2D" path="res://assets/art/filtroBot iconoV1.png" id="13_filter_1"]
-[ext_resource type="Texture2D" path="res://assets/art/filtroBot iconov2.png" id="14_filter_2"]
-[ext_resource type="Texture2D" path="res://assets/art/filtroBot iconoV3.png" id="15_filter_3"]
+[ext_resource type="Texture2D" uid="uid://baruwd2p8rfuj" path="res://assets/art/cebo icono.png" id="12_bait_icon"]
+[ext_resource type="Texture2D" uid="uid://jlv1dd5bfqsw" path="res://assets/art/filtroBot iconoV1.png" id="13_filter_1"]
+[ext_resource type="Texture2D" uid="uid://bfjii6o11u3u4" path="res://assets/art/filtroBot iconov2.png" id="14_filter_2"]
+[ext_resource type="Texture2D" uid="uid://ccobvm6vch8ga" path="res://assets/art/filtroBot iconoV3.png" id="15_filter_3"]
 
 [sub_resource type="Environment" id="Environment_1"]
 background_mode = 1
@@ -143,15 +143,15 @@ collision_layer = 2
 collision_mask = 0
 monitoring = false
 script = ExtResource("6_shop")
-item = 1
 filter_icons = Array[Texture2D]([ExtResource("13_filter_1"), ExtResource("14_filter_2"), ExtResource("15_filter_3")])
+item = 1
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Cabin/ShopFilter" unique_id=844035602]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4331287, 0.59588265, 0)
 shape = SubResource("BoxShape_shop")
 
 [node name="Label3D" type="Label3D" parent="Cabin/ShopFilter" unique_id=1314702437]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4331287, 0.59588265, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4331287, 0.512985, 0)
 pixel_size = 0.0035
 modulate = Color(0.55, 0.9, 1, 1)
 text = "Comprar Filtro"

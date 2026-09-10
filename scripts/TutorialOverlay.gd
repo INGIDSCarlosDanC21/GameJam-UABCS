@@ -5,18 +5,18 @@ var _clock := 0.0
 var _label: Label3D
 var _skip: Area3D
 const PAGES := [
-	"BIENVENIDO A LA CABINA\n\nUsa el láser para apuntar. Mantén pulsado para agarrar objetivos.\nTambién puedes usar el ratón en PC.",
-	"PECES Y MONEDAS\n\nLos peces raros y grandes pagan más, pero dañan más el océano.\nLas auras doradas dan más dinero y tardan más en capturarse.",
-	"LIMPIA EL OCÉANO\n\nCaptura basura para recuperar salud. Compra filtros y robots limpiadores: cada calidad trabaja más rápido.",
-	"PELIGROS\n\nLos caracoles se pegan a tu vista: arrástralos al borde y suelta.\nEvita al pez globo y no enfades a la anguila.",
-	"PROFUNDIDAD\n\nCada seis capturas desciendes automáticamente. Habrá más basura y caracoles; los peces crecen y se vuelven más valiosos."
+	"APUNTA Y MANTÉN\nLáser VR o ratón en PC.",
+	"PECES = MONEDAS\nLos raros pagan más, pero dañan el océano.",
+	"LIMPIA BASURA\nRecupera salud y compra Filtrobots.",
+	"PELIGROS\nArroja caracoles; evita globo y anguila.",
+	"DESCIENDE\nCada cinco niveles hay más riesgo y valor."
 ]
 
 func _ready() -> void:
-	position = Vector3(0, 0.03, -1.15)
+	position = Vector3(0, 0.16, -1.15)
 	var panel := MeshInstance3D.new()
 	var mesh := QuadMesh.new()
-	mesh.size = Vector2(1.55, 0.78)
+	mesh.size = Vector2(1.02, 0.48)
 	panel.mesh = mesh
 	var material := StandardMaterial3D.new()
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -26,30 +26,30 @@ func _ready() -> void:
 	panel.position.z = 0.02
 	add_child(panel)
 	_label = Label3D.new()
-	_label.font_size = 38
-	_label.pixel_size = 0.00155
-	_label.outline_size = 5
-	_label.width = 940
+	_label.font_size = 26
+	_label.pixel_size = 0.00135
+	_label.outline_size = 4
+	_label.width = 620
 	_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_label.position = Vector3(-0.70, 0.21, 0)
+	_label.position = Vector3(-0.42, 0.12, 0)
 	add_child(_label)
 	_skip = Area3D.new()
 	_skip.set_script(preload("res://scripts/TutorialSkip.gd"))
 	_skip.tutorial = self
 	var skip_label := Label3D.new()
 	skip_label.text = "OMITIR TUTORIAL"
-	skip_label.font_size = 30
-	skip_label.pixel_size = 0.0015
+	skip_label.font_size = 20
+	skip_label.pixel_size = 0.00125
 	skip_label.outline_size = 4
 	skip_label.modulate = Color("a9e6ff")
-	skip_label.position = Vector3(-0.22, -0.34, 0)
+	skip_label.position = Vector3(-0.16, -0.20, 0)
 	_skip.add_child(skip_label)
 	var shape := CollisionShape3D.new()
 	var box := BoxShape3D.new()
-	box.size = Vector3(0.54, 0.11, 0.06)
+	box.size = Vector3(0.38, 0.08, 0.06)
 	shape.shape = box
-	shape.position = Vector3(0, -0.30, 0)
+	shape.position = Vector3(0, -0.18, 0)
 	_skip.add_child(shape)
 	add_child(_skip)
 	_show_page()

@@ -183,8 +183,7 @@ func _defeat(value: bool) -> void:
 	GameManager.active_cleaners = 0
 	for hostile in get_tree().get_nodes_in_group("hostiles"): hostile.queue_free()
 	_status.hide()
-	for shop_name in ["ShopBait", "ShopFilter"]:
-		var shop := get_parent().get_node("Cabin/" + shop_name)
+	for shop in get_tree().get_nodes_in_group("shop_items"):
 		shop.hide()
 		shop.collision_layer = 0
 	get_parent().get_node("XROrigin3D/XRCamera3D/Vignette").hide()

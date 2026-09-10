@@ -11,9 +11,12 @@ var _accepted := false
 var _art: Sprite3D
 
 func _ready() -> void:
-	position = Vector3(-0.5 if item == Item.BAIT else 0.5, 1.95, -1.5)
+	position = Vector3(-0.46 if item == Item.BAIT else 0.46, -0.56, -1.2)
 	if item == Item.DESCEND: position = Vector3(0, 1.05, -1.7)
 	if item == Item.RESTART: position = Vector3(0, 1.75, -2.0)
+	if item == Item.BAIT or item == Item.FILTER:
+		add_to_group("shop_items")
+		call_deferred("_attach_to_camera")
 	_label.position = Vector3.ZERO
 	$CollisionShape3D.position = Vector3.ZERO
 	add_to_group("interactable")
@@ -54,6 +57,12 @@ func _ready() -> void:
 	GameManager.coins_changed.connect(_refresh)
 	GameManager.level_changed.connect(func(_value: int): _refresh(GameManager.coins))
 	_refresh(GameManager.coins)
+
+func _attach_to_camera() -> void:
+	var camera := get_tree().current_scene.get_node_or_null("XROrigin3D/XRCamera3D") as Camera3D
+	if not is_instance_valid(camera): return
+	reparent(camera, false)
+	position = Vector3(-0.46 if item == Item.BAIT else 0.46, -0.56, -1.2)
 
 func set_hovered(value: bool) -> void:
 	if value and not _hover: GameManager.sound_requested.emit("touch")
