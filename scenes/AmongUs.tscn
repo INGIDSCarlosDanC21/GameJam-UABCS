@@ -1,0 +1,66 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Shader" path="res://shaders/ink_outline.gdshader" id="1"]
+[sub_resource type="ShaderMaterial" id="Ink"]
+shader = ExtResource("1")
+shader_parameter/thickness = 0.018
+[sub_resource type="StandardMaterial3D" id="Red"]
+next_pass = SubResource("Ink")
+albedo_color = Color(0.8, 0.025, 0.055, 1)
+diffuse_mode = 3
+specular_mode = 1
+roughness = 0.8
+[sub_resource type="StandardMaterial3D" id="Glass"]
+next_pass = SubResource("Ink")
+albedo_color = Color(0.35, 0.77, 0.91, 1)
+diffuse_mode = 3
+specular_mode = 1
+roughness = 0.25
+[sub_resource type="StandardMaterial3D" id="White"]
+shading_mode = 0
+albedo_color = Color(0.88, 0.98, 1, 1)
+[sub_resource type="CapsuleMesh" id="Body"]
+radius = 0.28
+height = 0.8
+radial_segments = 24
+rings = 8
+[sub_resource type="CapsuleMesh" id="Leg"]
+radius = 0.115
+height = 0.34
+radial_segments = 16
+rings = 4
+[sub_resource type="SphereMesh" id="Visor"]
+radius = 0.25
+height = 0.5
+radial_segments = 24
+rings = 12
+[sub_resource type="BoxMesh" id="Pack"]
+size = Vector3(0.38, 0.48, 0.2)
+
+[node name="AmongUs" type="Node3D"]
+[node name="Body" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.57, 0)
+mesh = SubResource("Body")
+material_override = SubResource("Red")
+[node name="LeftLeg" type="MeshInstance3D" parent="."]
+position = Vector3(-0.15, 0.17, 0)
+mesh = SubResource("Leg")
+material_override = SubResource("Red")
+[node name="RightLeg" type="MeshInstance3D" parent="."]
+position = Vector3(0.15, 0.17, 0)
+mesh = SubResource("Leg")
+material_override = SubResource("Red")
+[node name="Backpack" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.54, -0.3)
+mesh = SubResource("Pack")
+material_override = SubResource("Red")
+[node name="Visor" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.69, 0.23)
+scale = Vector3(1, 0.62, 0.5)
+mesh = SubResource("Visor")
+material_override = SubResource("Glass")
+[node name="Reflection" type="MeshInstance3D" parent="."]
+position = Vector3(-0.06, 0.74, 0.344)
+scale = Vector3(0.35, 0.12, 0.04)
+mesh = SubResource("Visor")
+material_override = SubResource("White")

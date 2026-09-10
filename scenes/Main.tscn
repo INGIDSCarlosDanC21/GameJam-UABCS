@@ -7,6 +7,8 @@
 [ext_resource type="PackedScene" uid="uid://cpdgdv5n846xc" path="res://scenes/InteractableEntity.tscn" id="5_ent"]
 [ext_resource type="Script" uid="uid://cd50v0e84yxot" path="res://scripts/ShopItem.gd" id="6_shop"]
 [ext_resource type="PackedScene" uid="uid://diwxoo5tclrbo" path="res://seatruck_subnautica.glb" id="7_nxtc6"]
+[ext_resource type="Script" uid="uid://bhy680wym05la" path="res://scripts/CartoonStyle.gd" id="8_style"]
+[ext_resource type="PackedScene" path="res://scenes/AmongUs.tscn" id="9_egg"]
 
 [sub_resource type="Environment" id="Environment_1"]
 background_mode = 1
@@ -30,12 +32,6 @@ transparency = 1
 shading_mode = 0
 albedo_color = Color(0.2, 1, 0.45, 0.85)
 
-[sub_resource type="StandardMaterial3D" id="Mat_wood"]
-albedo_color = Color(0.28, 0.18, 0.1, 1)
-
-[sub_resource type="BoxMesh" id="BoxMesh_floor"]
-size = Vector3(3.2, 0.08, 2.4)
-
 [sub_resource type="BoxShape3D" id="BoxShape_shop"]
 size = Vector3(0.45, 0.28, 0.08)
 
@@ -55,7 +51,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.05, 0.22, 0.38, 1)
+color = Color(0.15003812, 0.43713173, 0.7158848, 1)
 
 [node name="VideoStreamPlayer" type="VideoStreamPlayer" parent="SkyViewport" unique_id=1467517902]
 visible = false
@@ -70,7 +66,8 @@ expand = true
 loop = true
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=454153266]
-transform = Transform3D(0.8660253, -0.35355338, 0.3535538, 0, 0.70710725, 0.7071064, -0.50000024, -0.612372, 0.6123727, 0, 1.3447812, 2)
+transform = Transform3D(0.8660253, -0.35355332, 0.35355377, 0, 0.7071072, 0.7071064, -0.50000024, -0.612372, 0.61237276, -0.06788027, 1.3447812, 0.38753486)
+light_color = Color(0.42177996, 0.97321874, 0.99999994, 1)
 light_energy = 0.85
 
 [node name="XROrigin3D" type="XROrigin3D" parent="." unique_id=1107454]
@@ -107,11 +104,6 @@ tracker = &"left_hand"
 pose = &"aim"
 
 [node name="Cabin" type="Node3D" parent="." unique_id=931301642]
-
-[node name="Floor" type="MeshInstance3D" parent="Cabin" unique_id=353050285]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.2)
-material_override = SubResource("Mat_wood")
-mesh = SubResource("BoxMesh_floor")
 
 [node name="StatusLabel" type="Label3D" parent="Cabin" unique_id=391231914]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0721366, -0.82)
@@ -157,6 +149,9 @@ modulate = Color(0.55, 0.9, 1, 1)
 text = "Comprar Filtro"
 font_size = 28
 
+[node name="AmongUsEasterEgg" parent="Cabin" unique_id=1100147041 instance=ExtResource("9_egg")]
+transform = Transform3D(-1.2006402, 0, -0.0621235, 0, 1.2849197, 0, 0.076575816, 0, -0.9740405, -0.05234641, -0.52907425, 0.8750951)
+
 [node name="Spawner" type="Node3D" parent="." unique_id=47148865]
 script = ExtResource("4_spw")
 entity_scene = ExtResource("5_ent")
@@ -166,3 +161,6 @@ volume_db = -8.0
 
 [node name="Sketchfab_Scene" parent="." unique_id=983537497 instance=ExtResource("7_nxtc6")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.004464805, -1.683303, 0.81687045)
+
+[node name="CartoonStyle" type="Node" parent="." unique_id=264437017]
+script = ExtResource("8_style")

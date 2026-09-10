@@ -46,7 +46,7 @@ func on_click() -> void:
 	_clicked = true
 	match kind:
 		Kind.FISH:
-			GameManager.catch_fish()
+			GameManager.catch_fish(rarity, size_factor)
 		Kind.TRASH:
 			GameManager.clean_trash()
 	queue_free()
@@ -63,23 +63,55 @@ func _expire() -> void:
 	queue_free()
 
 
+const FISH_ART := ["pez azul", "pez naranja", "anginla", "anginla enojada", "pez dorado millonario"]
+const FISH_WEIGHTS := [40, 30, 18, 10, 2]
+const TRASH_ART := ["botella rota inferiror", "botella rota superior", "lata", "monton de basura", "soporte de cerveza"]
+const INK = preload("res://shaders/sprite_ink.gdshader")
+static var art_cache: Dictionary = {}
+var rarity: int = 0
+var size_factor: float = 1.0
+var species: String = ""
+
 func _apply_placeholder() -> void:
-	if _sprite == null:
-		return
-	var color := Color(0.25, 0.75, 1.0) if kind == Kind.FISH else Color(0.82, 0.38, 0.12)
-	_sprite.texture = _make_block_texture(color, kind == Kind.FISH)
-	_sprite.pixel_size = 0.004
-	_sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-
-
-func _make_block_texture(color: Color, is_fish: bool) -> Texture2D:
-	var w := 64 if is_fish else 48
-	var h := 32 if is_fish else 48
-	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
-	img.fill(Color(0, 0, 0, 0))
-	for y in h:
-		for x in w:
-			var edge := x > 2 and x < w - 3 and y > 2 and y < h - 3
-			if edge:
-				img.set_pixel(x, y, color)
-	return ImageTexture.create_from_image(img)
+	if species.is_empty():
+		if kind == Kind.FISH:
+			var roll := randi_range(1, 100)
+			var index := 0
+			while roll > FISH_WEIGHTS[index]:
+				roll -= FISH_WEIGHTS[index]
+				index += 1
+			species = FISH_ART[index]
+			rarity = [0, 0, 1, 2, 3][index]
+			speed = [0.55, 0.6, 0.7, 0.9, 0.4][index]
+			size_factor = [0.75, 1.0, 1.5].pick_random()
+		else:
+			species = TRASH_ART.pick_random()
+			speed = 0.35
+			add_to_group("trash")
+	var path := "res://assets/art/" + species + ".png"
+	if not art_cache.has(path):
+		var texture := load(path) as Texture2D
+		var bounds := texture.get_image().get_used_rect()
+		art_cache[path] = [texture, bounds]
+	var texture: Texture2D = art_cache[path][0]
+	var bounds: Rect2i = art_cache[path][1]
+	_sprite.texture = texture
+	_sprite.region_enabled = true
+	_sprite.region_rect = Rect2(bounds.grow(5).intersection(Rect2i(Vector2i.ZERO, Vector2i(texture.get_size()))))
+	var width := (0.65 if species.begins_with("anginla") else 0.38) * size_factor
+	if species == "monton de basura":
+		width = 0.6
+	_sprite.pixel_size = width / float(maxi(bounds.size.x, 1))
+	_sprite.billboard = BaseMaterial3D.BILLBOARD_DISABLED
+	_sprite.flip_h = kind == Kind.FISH and direction < 0.0
+	_sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
+	var mat := ShaderMaterial.new()
+	mat.shader = INK
+	mat.set_shader_parameter("art", texture)
+	mat.set_shader_parameter("texel", Vector2.ONE / texture.get_size())
+	var colors := [Color(0, 0, 0, 0), Color(0.2, 0.8, 1, 0.15), Color(0.8, 0.3, 1, 0.25), Color(1, 0.75, 0.1, 0.4)]
+	mat.set_shader_parameter("glow_color", colors[rarity])
+	_sprite.material_override = mat
+	var box := BoxShape3D.new()
+	box.size = Vector3(width, bounds.size.y * _sprite.pixel_size, 0.08)
+	$CollisionShape3D.shape = box

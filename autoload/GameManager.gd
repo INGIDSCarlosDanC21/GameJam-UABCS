@@ -38,9 +38,11 @@ func ignore_trash() -> void:
 	_set_health(ocean_health - dmg)
 
 
-func catch_fish() -> void:
-	_add_coins(3 + bait_level * 2)
-	_set_health(ocean_health - 6.0)
+func catch_fish(rarity: int = 0, size_factor: float = 1.0) -> void:
+	var multiplier: float = [1.0, 2.0, 4.0, 8.0][clampi(rarity, 0, 3)]
+	var size := clampf(size_factor, 0.75, 1.5)
+	_add_coins(maxi(1, roundi((3 + bait_level * 2) * multiplier * size)))
+	_set_health(ocean_health - 6.0 * multiplier * size)
 
 
 func let_fish_go() -> void:
