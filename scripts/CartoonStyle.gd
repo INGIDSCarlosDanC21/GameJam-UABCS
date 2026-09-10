@@ -30,10 +30,10 @@ func _style(node: Node) -> void:
 		for i in range(node.mesh.get_surface_count()):
 			var source: Material = node.get_active_material(i)
 			if source is StandardMaterial3D and source.transparency == BaseMaterial3D.TRANSPARENCY_DISABLED:
-				var mat: StandardMaterial3D = source.duplicate()
-				mat.diffuse_mode = BaseMaterial3D.DIFFUSE_TOON
-				mat.specular_mode = BaseMaterial3D.SPECULAR_TOON
-				mat.roughness = 0.8
+				var mat := ShaderMaterial.new()
+				mat.shader = preload("res://shaders/submarine_gray.gdshader")
+				mat.set_shader_parameter("base_color", source.albedo_color)
+				if source.albedo_texture: mat.set_shader_parameter("paint", source.albedo_texture)
 				var ink := ShaderMaterial.new()
 				ink.shader = OUTLINE
 				ink.set_shader_parameter("thickness", 0.006)

@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://bve1hv5o7qvdc"
+path="res://.godot/imported/ola de mar para cambio de nivel.mp3-4a0aae6431a1183a0f0f03b68fdadd47.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/effects/ola de mar para cambio de nivel.mp3"
+dest_files=["res://.godot/imported/ola de mar para cambio de nivel.mp3-4a0aae6431a1183a0f0f03b68fdadd47.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

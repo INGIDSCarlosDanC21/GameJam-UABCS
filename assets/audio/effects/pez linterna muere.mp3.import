@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://b6uwil1hnxf4u"
+path="res://.godot/imported/pez linterna muere.mp3-aeb69fce041ae67866cbedaade81af8e.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/effects/pez linterna muere.mp3"
+dest_files=["res://.godot/imported/pez linterna muere.mp3-aeb69fce041ae67866cbedaade81af8e.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

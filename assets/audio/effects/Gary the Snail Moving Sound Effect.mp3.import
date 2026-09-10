@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://bsblth32wf45e"
+path="res://.godot/imported/Gary the Snail Moving Sound Effect.mp3-7b5603c8f72eda5ee8020cc9b7b8ad76.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/effects/Gary the Snail Moving Sound Effect.mp3"
+dest_files=["res://.godot/imported/Gary the Snail Moving Sound Effect.mp3-7b5603c8f72eda5ee8020cc9b7b8ad76.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

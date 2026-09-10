@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://bxid2aqhh8cqj"
+path="res://.godot/imported/FNAF 3 ventilation error.mp3-d9ba25a3cf6c8b388bc352287b13f12c.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/effects/FNAF 3 ventilation error.mp3"
+dest_files=["res://.godot/imported/FNAF 3 ventilation error.mp3-d9ba25a3cf6c8b388bc352287b13f12c.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

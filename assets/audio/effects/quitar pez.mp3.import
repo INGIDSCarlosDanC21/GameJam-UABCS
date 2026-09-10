@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://ccbsluhtye4q7"
+path="res://.godot/imported/quitar pez.mp3-f1ea5e7f800bcd31bc69d7f1167f26fb.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/effects/quitar pez.mp3"
+dest_files=["res://.godot/imported/quitar pez.mp3-f1ea5e7f800bcd31bc69d7f1167f26fb.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4
