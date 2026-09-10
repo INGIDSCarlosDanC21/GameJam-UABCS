@@ -21,6 +21,7 @@ func _ready() -> void:
 	GameManager.fever_changed.connect(_fever)
 	GameManager.coin_requested.connect(_coin_fly)
 	GameManager.depth_changed.connect(_depth_announcement)
+	GameManager.level_changed.connect(_upgrade_cleaners)
 	var camera := get_parent().get_node("XROrigin3D/XRCamera3D")
 	_screen = MeshInstance3D.new()
 	var quad := QuadMesh.new()
@@ -141,6 +142,13 @@ func _buy_cleaner(quality: int) -> void:
 	robot.quality = quality
 	robot.position = Vector3(-1.7, 1.2, -3.5)
 	add_child(robot)
+
+func _upgrade_cleaners(value: int) -> void:
+	var quality := GameManager.cleaner_quality()
+	for cleaner in get_tree().get_nodes_in_group("cleaners"):
+		cleaner.set_quality(quality)
+	if value == 5 or value == 10:
+		GameManager.sound_requested.emit("level")
 
 func _coin_fly(at: Vector3, amount: int) -> void:
 	var coin := Node3D.new()

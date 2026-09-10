@@ -1,12 +1,14 @@
 extends Area3D
 enum Item { BAIT, FILTER, DESCEND, RESTART }
 @export var button_texture: Texture2D
+@export var filter_icons: Array[Texture2D]
 @export var item: Item = Item.BAIT
 @onready var _label: Label3D = $Label3D
 var _panel: StandardMaterial3D
 var _hover := false
 var _feedback := 0.0
 var _accepted := false
+var _art: Sprite3D
 
 func _ready() -> void:
 	position = Vector3(-0.5 if item == Item.BAIT else 0.5, 1.95, -1.5)
@@ -27,12 +29,10 @@ func _ready() -> void:
 	backing.material_override = _panel
 	backing.position = _label.position + Vector3(0, 0, -0.03)
 	add_child(backing)
-	if button_texture:
-		var art := Sprite3D.new()
-		art.texture = button_texture
-		art.pixel_size = 0.64 / button_texture.get_width()
-		art.position.z = 0.002
-		add_child(art)
+	if button_texture or not filter_icons.is_empty():
+		_art = Sprite3D.new()
+		_art.position.z = 0.002
+		add_child(_art)
 		_label.position.y = -0.18
 	var border := MeshInstance3D.new()
 	var outer := BoxMesh.new()
@@ -52,6 +52,7 @@ func _ready() -> void:
 	shape.size = Vector3(1.25, 0.65, 0.07) if item == Item.RESTART else Vector3(0.66, 0.3, 0.07)
 	$CollisionShape3D.shape = shape
 	GameManager.coins_changed.connect(_refresh)
+	GameManager.level_changed.connect(func(_value: int): _refresh(GameManager.coins))
 	_refresh(GameManager.coins)
 
 func set_hovered(value: bool) -> void:
@@ -88,6 +89,13 @@ func _refresh(coins: int) -> void:
 	var level := GameManager.bait_level if item == Item.BAIT else GameManager.filter_level
 	var description := "+ Peces y recompensa" if item == Item.BAIT else "Filtro + robot (60 s)"
 	_label.text = "%s  /  NIVEL %d\n%s\n%d MONEDAS" % [title, level, description, price]
+	if is_instance_valid(_art):
+		var icon := button_texture
+		if item == Item.FILTER and not filter_icons.is_empty():
+			icon = filter_icons[mini(GameManager.cleaner_quality() - 1, filter_icons.size() - 1)]
+		if icon:
+			_art.texture = icon
+			_art.pixel_size = 0.64 / icon.get_width()
 	_panel.albedo_color = Color("14576c") if _hover else Color("102d43")
 	if coins < price:
 		_panel.albedo_color = Color("39404d")

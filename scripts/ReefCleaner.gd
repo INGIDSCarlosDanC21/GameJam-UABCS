@@ -4,18 +4,24 @@ var age := 0.0
 var _bubble_time := 0.0
 var cooldown := 0.0
 var side := 1.0
+var _sprite: Sprite3D
 func _ready() -> void:
 	add_to_group("cleaners")
-	var sprite := Sprite3D.new()
-	sprite.texture = preload("res://assets/art/robot aspiradora.png")
-	if quality == 2: sprite.texture = preload("res://assets/art/robot de basura 2.png")
-	if quality == 3: sprite.texture = preload("res://assets/art/robot de basura 3.png")
-	var bounds := sprite.texture.get_image().get_used_rect()
-	sprite.region_enabled = true
-	sprite.region_rect = Rect2(bounds)
-	sprite.pixel_size = 0.42 / maxi(bounds.size.x, 1)
-	sprite.modulate = [Color.WHITE, Color("96dcff"), Color("ffdc80")][quality - 1]
-	add_child(sprite)
+	_sprite = Sprite3D.new()
+	add_child(_sprite)
+	set_quality(quality)
+
+func set_quality(value: int) -> void:
+	quality = clampi(value, 1, 3)
+	if not is_instance_valid(_sprite): return
+	_sprite.texture = preload("res://assets/art/robot aspiradora.png")
+	if quality == 2: _sprite.texture = preload("res://assets/art/robot de basura 2.png")
+	if quality == 3: _sprite.texture = preload("res://assets/art/robot de basura 3.png")
+	var bounds := _sprite.texture.get_image().get_used_rect()
+	_sprite.region_enabled = true
+	_sprite.region_rect = Rect2(bounds)
+	_sprite.pixel_size = 0.42 / maxi(bounds.size.x, 1)
+	_sprite.modulate = [Color.WHITE, Color("96dcff"), Color("ffdc80")][quality - 1]
 func _physics_process(delta: float) -> void:
 	if GameManager.defeated: return
 	age += delta

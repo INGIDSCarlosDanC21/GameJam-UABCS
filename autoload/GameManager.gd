@@ -47,6 +47,10 @@ func _process(delta: float) -> void:
 func difficulty() -> float:
 	return minf(2.3, 1.0 + (level - 1) * 0.05 + depth * 0.12)
 
+func cleaner_quality() -> int:
+	# The Filtrobot evolves at levels 5 and 10; its maximum quality is level 3.
+	return clampi(1 + level / 5, 1, 3)
+
 func progress() -> void:
 	if defeated: return
 	experience += 1
@@ -115,7 +119,7 @@ func buy_filter() -> bool:
 	coins -= filter_cost()
 	filter_level += 1
 	active_cleaners += 1
-	cleaner_bought.emit(mini(filter_level, 3))
+	cleaner_bought.emit(cleaner_quality())
 	coins_changed.emit(coins)
 	return true
 
