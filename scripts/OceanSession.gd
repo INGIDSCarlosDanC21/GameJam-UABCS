@@ -64,10 +64,6 @@ func _ready() -> void:
 			_lights.append(node)
 	for node in get_parent().get_children():
 		if node is Light3D and not node in _lights: _lights.append(node)
-	if GameManager.tutorial_active:
-		var tutorial := Node3D.new()
-		tutorial.set_script(preload("res://scripts/TutorialOverlay.gd"))
-		get_parent().get_node("XROrigin3D/XRCamera3D").add_child(tutorial)
 
 func _button(type: int) -> Area3D:
 	var button := Area3D.new()
@@ -89,7 +85,7 @@ func _process(delta: float) -> void:
 	_screen_mat.set_shader_parameter("fever", 1.0 if GameManager.fever_left > 0 else 0.0)
 	_screen_mat.set_shader_parameter("stun", 1.0 if GameManager.stun_left > 0 else 0.0)
 	_hostile_timer -= world_delta
-	if _hostile_timer <= 0 and not GameManager.defeated and not GameManager.tutorial_active:
+	if _hostile_timer <= 0 and not GameManager.defeated:
 		_hostile_timer = maxf(3.5, 16.0 - GameManager.depth * 2.2)
 		if get_tree().get_nodes_in_group("hostiles").size() < mini(10, 2 + GameManager.depth * 2):
 			var hostile := Area3D.new()

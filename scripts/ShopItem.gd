@@ -11,12 +11,11 @@ var _accepted := false
 var _art: Sprite3D
 
 func _ready() -> void:
-	position = Vector3(-0.46 if item == Item.BAIT else 0.46, -0.56, -1.2)
+	position = Vector3(-0.27 if item == Item.BAIT else 0.27, 0.82, -1.45)
 	if item == Item.DESCEND: position = Vector3(0, 1.05, -1.7)
 	if item == Item.RESTART: position = Vector3(0, 1.75, -2.0)
 	if item == Item.BAIT or item == Item.FILTER:
 		add_to_group("shop_items")
-		call_deferred("_attach_to_camera")
 	_label.position = Vector3.ZERO
 	$CollisionShape3D.position = Vector3.ZERO
 	add_to_group("interactable")
@@ -27,19 +26,19 @@ func _ready() -> void:
 	_panel.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	var backing := MeshInstance3D.new()
 	var box := BoxMesh.new()
-	box.size = Vector3(1.25, 0.65, 0.035) if item == Item.RESTART else Vector3(0.72, 0.78, 0.035)
+	box.size = Vector3(1.25, 0.65, 0.035) if item == Item.RESTART else Vector3(0.42, 0.44, 0.035)
 	backing.mesh = box
 	backing.material_override = _panel
 	backing.position = _label.position + Vector3(0, 0, -0.03)
 	add_child(backing)
 	if button_texture or not filter_icons.is_empty():
 		_art = Sprite3D.new()
-		_art.position = Vector3(0, 0.12, 0.002)
+		_art.position = Vector3(0, 0.07, 0.002)
 		add_child(_art)
-		_label.position.y = -0.31
+		_label.position.y = -0.16
 	var border := MeshInstance3D.new()
 	var outer := BoxMesh.new()
-	outer.size = Vector3(1.28, 0.68, 0.03) if item == Item.RESTART else Vector3(0.75, 0.81, 0.03)
+	outer.size = Vector3(1.28, 0.68, 0.03) if item == Item.RESTART else Vector3(0.45, 0.47, 0.03)
 	border.mesh = outer
 	var ink := StandardMaterial3D.new()
 	ink.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -47,22 +46,16 @@ func _ready() -> void:
 	border.material_override = ink
 	border.position = backing.position + Vector3(0, 0, -0.024)
 	add_child(border)
-	_label.font_size = 28
-	_label.pixel_size = 0.0017
+	_label.font_size = 19
+	_label.pixel_size = 0.00135
 	_label.outline_size = 3
 	_label.modulate = Color("f2f8ff")
 	var shape := BoxShape3D.new()
-	shape.size = Vector3(1.25, 0.65, 0.07) if item == Item.RESTART else Vector3(0.72, 0.78, 0.07)
+	shape.size = Vector3(1.25, 0.65, 0.07) if item == Item.RESTART else Vector3(0.42, 0.44, 0.07)
 	$CollisionShape3D.shape = shape
 	GameManager.coins_changed.connect(_refresh)
 	GameManager.level_changed.connect(func(_value: int): _refresh(GameManager.coins))
 	_refresh(GameManager.coins)
-
-func _attach_to_camera() -> void:
-	var camera := get_tree().current_scene.get_node_or_null("XROrigin3D/XRCamera3D") as Camera3D
-	if not is_instance_valid(camera): return
-	reparent(camera, false)
-	position = Vector3(-0.46 if item == Item.BAIT else 0.46, -0.56, -1.2)
 
 func set_hovered(value: bool) -> void:
 	if value and not _hover: GameManager.sound_requested.emit("touch")
@@ -76,7 +69,6 @@ func _process(delta: float) -> void:
 			_refresh(GameManager.coins)
 
 func on_click() -> void:
-	if GameManager.tutorial_active: return
 	if item == Item.RESTART:
 		GameManager.restart.call_deferred()
 		return
@@ -104,7 +96,7 @@ func _refresh(coins: int) -> void:
 			icon = filter_icons[mini(GameManager.cleaner_quality() - 1, filter_icons.size() - 1)]
 		if icon:
 			_art.texture = icon
-			_art.pixel_size = 0.36 / icon.get_width()
+			_art.pixel_size = 0.20 / icon.get_width()
 	_panel.albedo_color = Color("14576c") if _hover else Color("102d43")
 	if coins < price:
 		_panel.albedo_color = Color("39404d")

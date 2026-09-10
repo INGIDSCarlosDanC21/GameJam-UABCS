@@ -16,8 +16,6 @@ La experiencia traduce dos problemas ambientales en reglas claras: retirar basur
 4. Compra cebo para aumentar recompensas o compra Filtrobots para automatizar la limpieza.
 5. Cada seis acciones se avanza de nivel. Cada cinco niveles la cabina desciende automáticamente y el Filtrobot evoluciona.
 
-El tutorial 3D aparece al iniciar y se puede omitir con el botón inferior.
-
 ## Sistemas de juego
 
 | Sistema | Función y relación con el tema |
@@ -41,16 +39,15 @@ El fondo utiliza un entorno oceánico 360 y la cabina procede de un modelo subma
 - XR: `XROrigin3D`, `XRCamera3D`, `XRController3D` y `RayCast3D`.
 - Prueba sin visor: la cámara y el ratón replican el puntero.
 - Rendimiento: peces, basura y peligros usan `Area3D` fantasma. No colisionan entre sí; solo son detectados por el puntero. Los objetos que salen de vista y los efectos temporales se liberan.
-- UI: los indicadores esenciales, tutorial y alarmas son geometría 3D frente a la cámara, legible dentro del visor.
+- UI: los indicadores esenciales y alarmas son geometría 3D integrada a la cabina, legible dentro del visor.
 
 ## Recorrido recomendado para la demostración
 
-1. Completar o mostrar las primeras páginas del tutorial.
-2. Recoger basura para mostrar recuperación de salud y monedas.
-3. Capturar un pez raro y observar la moneda que vuela al contador.
-4. Comprar un Filtrobot y dejar que limpie basura automáticamente.
-5. Mostrar una bajada de salud para activar oscuridad y alarma.
-6. Alcanzar nivel 5 para enseñar el descenso y la evolución del robot.
+1. Recoger basura para mostrar recuperación de salud y monedas.
+2. Capturar un pez raro y observar la moneda que vuela al contador.
+3. Comprar un Filtrobot y dejar que limpie basura automáticamente.
+4. Mostrar una bajada de salud para activar oscuridad y alarma.
+5. Alcanzar nivel 5 para enseñar el descenso y la evolución del robot.
 
 ## Controles
 
@@ -62,6 +59,6 @@ El fondo utiliza un entorno oceánico 360 y la cabina procede de un modelo subma
 
 - `autoload/GameManager.gd`: economía, progresión, salud y audio global.
 - `scripts/InteractableEntity.gd`: peces, basura, foca, rareza y estados no aptos.
-- `scripts/OceanSession.gd`: iluminación, riesgos, profundidad, tutorial y efectos de sesión.
+- `scripts/OceanSession.gd`: iluminación, riesgos, profundidad y efectos de sesión.
 - `scripts/ReefCleaner.gd`: movimiento, limpieza, evolución visual y burbujas del Filtrobot.
 - `scenes/Main.tscn`: cabina, controles XR, tienda, mundo y recursos visuales.

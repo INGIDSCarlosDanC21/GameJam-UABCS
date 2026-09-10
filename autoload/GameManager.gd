@@ -24,8 +24,6 @@ var active_cleaners := 0
 var defeated := false
 var stun_left := 0.0
 var slow_time_left := 0.0
-var tutorial_active := true
-var tutorial_completed := false
 var _pitch_fx: AudioEffectPitchShift
 
 func _ready() -> void:
@@ -165,5 +163,4 @@ func restart() -> void:
 	stun_left = 0.0
 	slow_time_left = 0.0
 	_apply_audio()
-	tutorial_active = not tutorial_completed
 	get_tree().reload_current_scene()
