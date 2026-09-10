@@ -46,3 +46,14 @@ Al llegar a cero se detienen las mecánicas, se retiran peces y robots, se ocult
 ## Verificación
 
 Prueba reproducible: ejecutar Godot desde el proyecto con `--xr-mode off --script res://tests/session_smoke.gd`. Comprueba 16 condiciones de progreso, contaminación, assets, robots, fiebre, iluminación, derrota y recarga real. Guarda una captura de derrota en .godot/defeat-preview.png. Validada con Vulkan en PC; falta revisar sensación de garra, iluminación del interior y legibilidad en el visor físico.
+## Actualización: zigzag, auras y cursor
+
+- Peces con zigzag vertical triangular de 0.44 m de recorrido y oscilación de profundidad de 0.20 m. La frecuencia aumenta al descender.
+- Tamaño multiplicado por 1 + profundidad × 0.22, limitado a 2.6. El tamaño grande también aumenta pago y tiempo de captura.
+- Probabilidad de aura: 18 % en superficie, +8 puntos por descenso, máximo 65 %. Tres intensidades: azul pálido a dorado. Cada nivel añade 60 % a la recompensa y 0.17 s al agarre. Durante fiebre se conserva el agarre rápido del bonus.
+- Botellas rotas caen desde Y=3.2; al pasar Y=-0.5 cuentan como basura ignorada. El resto de basura conserva deriva lateral y caduca a los 12 s.
+- Basura independiente de peces: intervalo max(0.28, 2.3/(1+profundidad×0.75)). Daño de ignorarla: (8+profundidad×2) × dificultad / (1+filtro×0.4). Máximo 65 entidades. Durante fiebre no aparece basura.
+- La mira circular sustituye al hueso y se sitúa justo delante del punto de impacto del asset señalado. No hay ajuste manual de profundidad ni resorte. Mantén gatillo/clic para llenar la barra; perder el objetivo reinicia el agarre.
+- Capturas y activaciones mediante la mira generan siete burbujas durante 1.5 s. Máximo doce grupos simultáneos.
+
+Pruebas: 20 verificaciones en PC/Vulkan, incluidas crecimiento, recompensa del aura, zigzag y caída vertical. Falta ajustar el balance mediante partidas reales en VR.

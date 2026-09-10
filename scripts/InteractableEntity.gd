@@ -11,6 +11,8 @@ static var art_cache: Dictionary = {}
 var direction := 1.0
 var rarity := 0
 var size_factor := 1.0
+var aura := 0
+var _halo: MeshInstance3D
 var species := ""
 var capture_time := 0.18
 var unsuitable := false
@@ -43,23 +45,35 @@ func _ready() -> void:
 			species = "pez azul" if r < 0.45 else ("pez naranja" if r < 0.8 else ("anginla" if r < 0.97 else "pez dorado millonario"))
 			if GameManager.depth > 0 and randf() < 0.15: species = "pez linterna"
 		rarity = 3 if "dorado" in species else (1 if "anginla" in species or "linterna" in species else 0)
-		size_factor = [0.9, 1.1, 1.4].pick_random()
+		size_factor = [0.9, 1.1, 1.4].pick_random() * minf(2.6, 1.0 + GameManager.depth * 0.22)
+		aura = randi_range(1, 3) if randf() < minf(0.65, 0.18 + GameManager.depth * 0.08) else 0
 		speed = (0.32 if "anginla" in species else 0.23) * GameManager.difficulty()
 	elif kind == Kind.TRASH:
 		add_to_group("trash")
-		species = TRASH_ART.pick_random()
+		if species.is_empty(): species = TRASH_ART.pick_random()
 		speed = 0.18
 	else:
 		species = "foca"
 		speed = 0.2
-	capture_time = 0.16 + rarity * 0.035 + (GameManager.difficulty() - 1) * 0.04
+	capture_time = 0.22 + rarity * 0.035 + aura * 0.17 + maxf(0, size_factor - 1) * 0.1
 	_base_y = position.y
 	_base_z = position.z
-	lifetime = 6.3 / maxf(speed, 0.1)
+	lifetime = 12.0 if kind == Kind.TRASH else 6.3 / maxf(speed, 0.1)
 	_material = ShaderMaterial.new()
 	_material.shader = INK
 	_sprite.material_override = _material
 	_apply_art(_texture_path(species))
+	if aura > 0:
+		_halo = MeshInstance3D.new()
+		var quad := QuadMesh.new()
+		quad.size = Vector2.ONE * 0.8 * size_factor
+		_halo.mesh = quad
+		var halo_mat := ShaderMaterial.new()
+		halo_mat.shader = preload("res://shaders/aura.gdshader")
+		halo_mat.set_shader_parameter("gold", float(aura) / 3.0)
+		_halo.material_override = halo_mat
+		_halo.position.z = -0.03
+		add_child(_halo)
 	_notifier = VisibleOnScreenNotifier3D.new()
 	add_child(_notifier)
 	if "linterna" in species:
@@ -103,9 +117,13 @@ func _physics_process(delta: float) -> void:
 		if (_sink_age > 1 and not _notifier.is_on_screen()) or _sink_age > 12: queue_free()
 		return
 	var fever := GameManager.fever_left > 0 and kind == Kind.FISH
+	if kind == Kind.TRASH and species.begins_with("botella"):
+		position.y -= (0.4 + GameManager.depth * 0.06) * delta
+		if position.y < -0.5: _expire()
+		return
 	position.x += direction * speed * (5.5 if fever else 1.0) * delta
-	position.y = _base_y + sin(_age * 1.1 + _phase) * 0.045
-	position.z = _base_z + sin(_age * 0.6 + _phase) * 0.08
+	position.y = _base_y + (2.0 / PI) * asin(sin(_age * (2.8 + GameManager.depth * 0.25) + _phase)) * (0.22 if kind == Kind.FISH else 0.04)
+	position.z = _base_z + sin(_age * 1.5 + _phase) * (0.2 if kind == Kind.FISH else 0.04)
 	if angry:
 		_rage_timer -= delta
 		if _rage_timer <= 0:
@@ -128,12 +146,13 @@ func on_click() -> void:
 	_clicked = true
 	if kind == Kind.SEAL: GameManager.start_fever()
 	elif kind == Kind.TRASH: GameManager.clean_trash()
-	else: GameManager.catch_fish(rarity, size_factor)
+	else: GameManager.catch_fish(rarity, size_factor, aura)
 	queue_free()
 
 func make_unsuitable() -> void:
 	if unsuitable or _clicked or kind != Kind.FISH: return
 	unsuitable = true
+	if _halo: _halo.hide()
 	collision_layer = 0
 	remove_from_group("interactable")
 	var found := false
@@ -174,5 +193,5 @@ func get_stats_text() -> String:
 	if kind == Kind.SEAL: return "FOCA / POWER UP\nFiebre de peces: 10 segundos"
 	if kind == Kind.TRASH: return "%s / +5 monedas\nLimpia para proteger a los peces" % species.capitalize()
 	if "anginla" in species: return "ANGUILA / No molestar\nAl tocarla contamina peces cercanos"
-	var stats := GameManager.fish_stats(rarity, size_factor)
-	return "%s | +%d monedas / -%.1f salud\n%.2f m/s | agarre %.2f s" % [species.capitalize(), stats.reward, stats.damage, speed, capture_time]
+	var stats := GameManager.fish_stats(rarity, size_factor, aura)
+	return "%s | +%d monedas / -%.1f salud\n%.2f m/s | agarre %.2f s | aura %d/3" % [species.capitalize(), stats.reward, stats.damage, speed, capture_time, aura]

@@ -25,6 +25,28 @@ func run() -> void:
 	await process_frame
 	var gm = root.get_node("GameManager")
 	var session = main.get_node("OceanSession")
+	check(gm.fish_stats(0,1,3).reward > gm.fish_stats(0,1,0).reward, "gold aura raises reward")
+	seed(70)
+	var shallow = entity(main,0,"pez azul",Vector3(0,1.5,-3))
+	gm.depth = 3
+	seed(70)
+	var deep = entity(main,0,"pez azul",Vector3(0,1.5,-3))
+	check(deep.size_factor > shallow.size_factor and deep.capture_time > shallow.capture_time, "depth grows fish and capture time")
+	var min_y := 100.0
+	var max_y := -100.0
+	for i in range(120):
+		deep._physics_process(0.016)
+		min_y = minf(min_y,deep.position.y)
+		max_y = maxf(max_y,deep.position.y)
+	check(max_y-min_y > 0.35, "fish zigzag has substantial travel")
+	var bottle = entity(main,1,"botella rota superior",Vector3(0,3.2,-3))
+	bottle._physics_process(1)
+	check(bottle.position.y < 3.0 and bottle.position.x == 0, "glass falls vertically")
+	shallow.queue_free()
+	deep.queue_free()
+	bottle.queue_free()
+	gm.depth = 0
+	await process_frame
 	check(gm.fish_stats(0, 1.0).damage == 1.2, "easy starting damage")
 	for i in range(24): gm.progress()
 	check(gm.level == 5 and gm.can_descend(), "level five unlocks depth")

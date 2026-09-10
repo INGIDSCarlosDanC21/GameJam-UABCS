@@ -40,27 +40,14 @@ func _ready() -> void:
 	_grip_bar.material_override = green
 	_grip_bar.position.y = 0.15
 	_claw.add_child(_grip_bar)
-	var ivory := StandardMaterial3D.new()
-	ivory.albedo_color = Color("8896a4")
-	ivory.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	var ink := ShaderMaterial.new()
-	ink.shader = preload("res://shaders/ink_outline.gdshader")
-	ink.set_shader_parameter("thickness", 0.004)
-	ivory.next_pass = ink
-	var shaft := CapsuleMesh.new()
-	shaft.radius = 0.016
-	shaft.height = 0.15
-	_part(_claw, shaft, Vector3.ZERO, ivory)
-	for side in [-1.0, 1.0]:
-		var finger := Node3D.new()
-		_claw.add_child(finger)
-		finger.position = Vector3(side * 0.028, 0.06, 0)
-		_fingers.append(finger)
-		var ball := SphereMesh.new()
-		ball.radius = 0.026
-		ball.height = 0.052
-		_part(finger, ball, Vector3(0, 0.045, 0), ivory)
-		_part(_claw, ball, Vector3(side * 0.024, -0.065, 0), ivory)
+	var ring := TorusMesh.new()
+	ring.inner_radius = 0.045
+	ring.outer_radius = 0.058
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = Color("7bffdf")
+	_part(_claw, ring, Vector3.ZERO, mat)
+	_claw.get_child(_claw.get_child_count() - 1).rotation.x = PI / 2
 	_info = Label3D.new()
 	_info.font_size = 24
 	_info.pixel_size = 0.0013
@@ -111,7 +98,7 @@ func _physics_process(delta: float) -> void:
 	_claw.show()
 	var origin := global_position if vr else _camera.project_ray_origin(get_viewport().get_mouse_position())
 	var desired := -global_basis.z if vr else _camera.project_ray_normal(get_viewport().get_mouse_position())
-	_aim = _aim.lerp(desired, 1.0 - exp(-15.0 * delta)).normalized()
+	_aim = desired.normalized()
 	_ray.global_position = origin
 	_ray.global_basis = Basis.IDENTITY
 	_ray.target_position = _aim * 8.0
@@ -121,17 +108,8 @@ func _physics_process(delta: float) -> void:
 	if _ray.is_colliding():
 		point = _ray.get_collision_point()
 		hit = _ray.get_collider() as Node3D
-	if not _initialized:
-		_claw.global_position = point
-		_initialized = true
-	_velocity += ((point - _claw.global_position) * stiffness - _velocity * damping) * delta
-	_velocity = _velocity.limit_length(max_speed)
-	_claw.global_position += _velocity * delta
+	_claw.global_position = point + (_camera.global_position - point).normalized() * 0.035
 	_claw.global_basis = _camera.global_basis
-	_claw.rotate_object_local(Vector3.FORWARD, clampf(_velocity.x * 0.05, -0.3, 0.3))
-	for i in range(_fingers.size()):
-		var angle := (0.1 if _held else 0.55) * (-1 if i == 0 else 1)
-		_fingers[i].rotation.z = lerpf(_fingers[i].rotation.z, angle, 1.0 - exp(-12 * delta))
 	_cooldown = maxf(0, _cooldown - delta)
 	if hit != _target:
 		_clear_target()
@@ -139,12 +117,12 @@ func _physics_process(delta: float) -> void:
 		if is_instance_valid(_target) and _target.has_method("set_hovered"):
 			_target.set_hovered(true)
 	if not is_instance_valid(_target) or not _target.is_in_group("interactable"):
-		_info.text = "Mantén gatillo / clic para cerrar la garra"
+		_info.text = "Apunta y mantén gatillo / clic para capturar"
 		return
 	if _held and _pressed_target != _target:
 		_pressed_target = _target
 		if _target.has_method("on_target_pressed"): _target.on_target_pressed()
-	var aligned := _claw.global_position.distance_to(point) < 0.3
+	var aligned := true
 	if _target.has_method("get_stats_text"):
 		_info.text = _target.get_stats_text()
 	else:
@@ -158,6 +136,7 @@ func _physics_process(delta: float) -> void:
 	_grip_ratio = clampf(_progress / required, 0, 1)
 	_info.text += "\nGarra: %d%%" % mini(100, int(100.0 * _progress / required))
 	if _progress >= required:
+		GameManager.bubbles_requested.emit(point)
 		_target.on_click()
 		_progress = 0.0
 		_cooldown = 0.15 if GameManager.fever_left > 0 else 0.3

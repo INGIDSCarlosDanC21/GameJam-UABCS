@@ -13,6 +13,7 @@ var _status: Label3D
 var _pulse := 0.0
 func _ready() -> void:
 	GameManager.cleaner_bought.connect(_buy_cleaner)
+	GameManager.bubbles_requested.connect(_bubbles)
 	GameManager.defeat_changed.connect(_defeat)
 	GameManager.fever_changed.connect(_fever)
 	_descend = _button(2)
@@ -153,3 +154,10 @@ func explode_at(at: Vector3) -> void:
 	tween.tween_property(effect, "scale", Vector3.ONE * 3, 0.25)
 	tween.tween_property(effect, "scale", Vector3.ZERO, 0.45)
 	tween.tween_callback(effect.queue_free)
+func _bubbles(at: Vector3) -> void:
+	if get_tree().get_nodes_in_group("bubble_bursts").size() >= 12: return
+	var burst := Node3D.new()
+	burst.set_script(preload("res://scripts/ActionBubbles.gd"))
+	burst.add_to_group("bubble_bursts")
+	add_child(burst)
+	burst.global_position = at

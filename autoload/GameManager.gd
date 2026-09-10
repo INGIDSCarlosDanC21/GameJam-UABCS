@@ -7,6 +7,7 @@ signal depth_changed(value: int)
 signal fever_changed(active: bool)
 signal cleaner_bought(quality: int)
 signal sound_requested(event: String)
+signal bubbles_requested(at: Vector3)
 const MAX_HEALTH := 100.0
 const BAIT_COST := 10
 const FILTER_COST := 20
@@ -76,15 +77,15 @@ func clean_trash(manual: bool = true) -> void:
 
 func ignore_trash() -> void:
 	if not defeated:
-		_set_health(ocean_health - 5.0 * difficulty() / (1.0 + filter_level * 0.4))
+		_set_health(ocean_health - (8.0 + depth * 2.0) * difficulty() / (1.0 + filter_level * 0.4))
 
-func fish_stats(rarity: int, size_factor: float) -> Dictionary:
+func fish_stats(rarity: int, size_factor: float, aura: int = 0) -> Dictionary:
 	var mult: float = [1.0, 1.5, 2.2, 3.5][clampi(rarity, 0, 3)]
-	return {"reward": maxi(1, roundi((3 + bait_level) * mult * size_factor * (2.0 if fever_left > 0 else 1.0))), "damage": 0.0 if fever_left > 0 else 1.2 * mult * size_factor}
+	return {"reward": maxi(1, roundi((3 + bait_level) * mult * size_factor * (1.0 + aura * 0.6) * (2.0 if fever_left > 0 else 1.0))), "damage": 0.0 if fever_left > 0 else 1.2 * mult * size_factor}
 
-func catch_fish(rarity: int = 0, size_factor: float = 1.0) -> void:
+func catch_fish(rarity: int = 0, size_factor: float = 1.0, aura: int = 0) -> void:
 	if defeated: return
-	var stats := fish_stats(rarity, size_factor)
+	var stats := fish_stats(rarity, size_factor, aura)
 	_add_coins(stats.reward)
 	_set_health(ocean_health - stats.damage)
 	if not defeated: progress()
