@@ -1,0 +1,22 @@
+[gd_scene load_steps=3 format=3 uid="uid://bq8interactable01"]
+
+[ext_resource type="Script" path="res://scripts/InteractableEntity.gd" id="1_ent"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_box"]
+size = Vector3(0.42, 0.32, 0.08)
+
+[node name="InteractableEntity" type="Area3D"]
+collision_layer = 2
+collision_mask = 0
+monitoring = false
+monitorable = true
+script = ExtResource("1_ent")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_box")
+
+[node name="Sprite3D" type="Sprite3D" parent="."]
+pixel_size = 0.004
+billboard = 1
+alpha_cut = 2
+texture_filter = 0

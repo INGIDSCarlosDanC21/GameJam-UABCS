@@ -1,0 +1,168 @@
+[gd_scene format=3 uid="uid://b6kh0dtfh2wjg"]
+
+[ext_resource type="Script" uid="uid://dh5ej36d7jc6n" path="res://scripts/Main.gd" id="1_main"]
+[ext_resource type="Script" uid="uid://bdm3wuvs0ns8s" path="res://scripts/VRPointer.gd" id="2_ptr"]
+[ext_resource type="Script" uid="uid://b8mj57khr6kqh" path="res://scripts/Vignette.gd" id="3_vig"]
+[ext_resource type="Script" uid="uid://r3k3posccsvq" path="res://scripts/Spawner.gd" id="4_spw"]
+[ext_resource type="PackedScene" uid="uid://cpdgdv5n846xc" path="res://scenes/InteractableEntity.tscn" id="5_ent"]
+[ext_resource type="Script" uid="uid://cd50v0e84yxot" path="res://scripts/ShopItem.gd" id="6_shop"]
+[ext_resource type="PackedScene" uid="uid://diwxoo5tclrbo" path="res://seatruck_subnautica.glb" id="7_nxtc6"]
+
+[sub_resource type="Environment" id="Environment_1"]
+background_mode = 1
+background_color = Color(0.02, 0.12, 0.2, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.35, 0.55, 0.7, 1)
+ambient_light_energy = 0.7
+tonemap_mode = 2
+
+[sub_resource type="QuadMesh" id="QuadMesh_vig"]
+flip_faces = true
+size = Vector2(0.5, 0.5)
+
+[sub_resource type="CylinderMesh" id="Cyl_laser"]
+top_radius = 0.004
+bottom_radius = 0.004
+height = 1.0
+
+[sub_resource type="StandardMaterial3D" id="Mat_laser"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.2, 1, 0.45, 0.85)
+
+[sub_resource type="StandardMaterial3D" id="Mat_wood"]
+albedo_color = Color(0.28, 0.18, 0.1, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+size = Vector3(3.2, 0.08, 2.4)
+
+[sub_resource type="BoxShape3D" id="BoxShape_shop"]
+size = Vector3(0.45, 0.28, 0.08)
+
+[node name="Main" type="Node3D" unique_id=1979243770]
+script = ExtResource("1_main")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1455331511]
+environment = SubResource("Environment_1")
+
+[node name="SkyViewport" type="SubViewport" parent="." unique_id=622183865]
+size = Vector2i(2048, 1024)
+render_target_update_mode = 4
+
+[node name="ColorRect" type="ColorRect" parent="SkyViewport" unique_id=886947742]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.05, 0.22, 0.38, 1)
+
+[node name="VideoStreamPlayer" type="VideoStreamPlayer" parent="SkyViewport" unique_id=1467517902]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+volume_db = -80.0
+autoplay = true
+expand = true
+loop = true
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=454153266]
+transform = Transform3D(0.8660253, -0.35355338, 0.3535538, 0, 0.70710725, 0.7071064, -0.50000024, -0.612372, 0.6123727, 0, 1.3447812, 2)
+light_energy = 0.85
+
+[node name="XROrigin3D" type="XROrigin3D" parent="." unique_id=1107454]
+
+[node name="XRCamera3D" type="XRCamera3D" parent="XROrigin3D" unique_id=1460045491]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
+current = true
+
+[node name="Vignette" type="MeshInstance3D" parent="XROrigin3D/XRCamera3D" unique_id=768427269]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.14)
+cast_shadow = 0
+mesh = SubResource("QuadMesh_vig")
+script = ExtResource("3_vig")
+
+[node name="RightController" type="XRController3D" parent="XROrigin3D" unique_id=523549206]
+tracker = &"right_hand"
+pose = &"aim"
+script = ExtResource("2_ptr")
+
+[node name="RayCast3D" type="RayCast3D" parent="XROrigin3D/RightController" unique_id=859726276]
+target_position = Vector3(0, 0, -8)
+collision_mask = 2
+collide_with_areas = true
+collide_with_bodies = false
+
+[node name="LaserBeam" type="MeshInstance3D" parent="XROrigin3D/RightController" unique_id=2001826921]
+transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, 0, -0.5)
+cast_shadow = 0
+mesh = SubResource("Cyl_laser")
+surface_material_override/0 = SubResource("Mat_laser")
+
+[node name="LeftController" type="XRController3D" parent="XROrigin3D" unique_id=1514352470]
+tracker = &"left_hand"
+pose = &"aim"
+
+[node name="Cabin" type="Node3D" parent="." unique_id=931301642]
+
+[node name="Floor" type="MeshInstance3D" parent="Cabin" unique_id=353050285]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.2)
+material_override = SubResource("Mat_wood")
+mesh = SubResource("BoxMesh_floor")
+
+[node name="StatusLabel" type="Label3D" parent="Cabin" unique_id=391231914]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0721366, -0.82)
+pixel_size = 0.004
+modulate = Color(0.75, 0.95, 1, 1)
+text = "Monedas: 25
+Salud océano: 100"
+
+[node name="ShopBait" type="Area3D" parent="Cabin" unique_id=49364362]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.55, 1.22, -0.72)
+collision_layer = 2
+collision_mask = 0
+monitoring = false
+script = ExtResource("6_shop")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Cabin/ShopBait" unique_id=25413895]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.42973083, 0.65129113, 0)
+shape = SubResource("BoxShape_shop")
+
+[node name="Label3D" type="Label3D" parent="Cabin/ShopBait" unique_id=1544062451]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.42973083, 0.65129113, 0)
+pixel_size = 0.0035
+modulate = Color(1, 0.92, 0.45, 1)
+text = "Comprar Cebo"
+font_size = 28
+
+[node name="ShopFilter" type="Area3D" parent="Cabin" unique_id=658881064]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.55, 1.22, -0.72)
+collision_layer = 2
+collision_mask = 0
+monitoring = false
+script = ExtResource("6_shop")
+item = 1
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Cabin/ShopFilter" unique_id=844035602]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4331287, 0.59588265, 0)
+shape = SubResource("BoxShape_shop")
+
+[node name="Label3D" type="Label3D" parent="Cabin/ShopFilter" unique_id=1314702437]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4331287, 0.59588265, 0)
+pixel_size = 0.0035
+modulate = Color(0.55, 0.9, 1, 1)
+text = "Comprar Filtro"
+font_size = 28
+
+[node name="Spawner" type="Node3D" parent="." unique_id=47148865]
+script = ExtResource("4_spw")
+entity_scene = ExtResource("5_ent")
+
+[node name="AmbientAudio" type="AudioStreamPlayer" parent="." unique_id=2133607664]
+volume_db = -8.0
+
+[node name="Sketchfab_Scene" parent="." unique_id=983537497 instance=ExtResource("7_nxtc6")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.004464805, -1.683303, 0.81687045)
