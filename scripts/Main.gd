@@ -35,7 +35,7 @@ func _setup_sky() -> void:
 		_world_env.environment = env
 	var sky := Sky.new()
 	var mat := PanoramaSkyMaterial.new()
-	mat.panorama = _sky_vp.get_texture()
+	mat.panorama = preload("res://assets/sky/ocean_reef_360.png")
 	sky.sky_material = mat
 	env.background_mode = Environment.BG_SKY
 	env.sky = sky
@@ -43,10 +43,14 @@ func _setup_sky() -> void:
 	env.ambient_light_energy = 0.85
 	var path := "res://assets/sky/ocean_360.ogv"
 	if ResourceLoader.exists(path):
+		mat.panorama = _sky_vp.get_texture()
+		sky.process_mode = Sky.PROCESS_MODE_REALTIME
 		_video.visible = true
 		_video.stream = load(path)
 		_video.loop = true
 		_video.play()
+	else:
+		_sky_vp.render_target_update_mode = SubViewport.UPDATE_DISABLED
 
 
 func _refresh_hud(_coins: int) -> void:
