@@ -21,11 +21,15 @@ func _setup_xr() -> void:
 	var viewport := get_viewport()
 	# Keep an active XR swapchain intact across scene reloads.
 	if xr != null and (xr.is_initialized() or xr.initialize()):
+		# OpenXR already supplies the physical headset height. Keeping the desktop
+		# offset here would stack both heights and place the player above the cabin.
+		$XROrigin3D/XRCamera3D.position.y = 0.0
 		$XROrigin3D/XRCamera3D.make_current()
 		viewport.use_xr = true
 		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 		print("Ocean VR: OpenXR activo; viewport enviando imagen al visor.")
 	else:
+		$XROrigin3D/XRCamera3D.position.y = 1.6
 		viewport.use_xr = false
 		print("Ocean VR: OpenXR no disponible; modo PC activo.")
 
