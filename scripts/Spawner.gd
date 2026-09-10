@@ -28,7 +28,7 @@ func _spawn(force_trash: bool = false) -> void:
 	if force_trash: kind = 1
 	e.setup(kind, dir)
 	if kind == 1: e.species = e.TRASH_ART.pick_random()
-	if GameManager.fever_left > 0: e.species = ["pez azul", "pez naranja", "pez dorado millonario"].pick_random()
+	if GameManager.fever_left > 0: e.species = "pez dorado millonario" if randf() < 0.015 else ["pez azul", "pez naranja"].pick_random()
 	e.position = Vector3(-2.8 * dir, randf_range(1.2, 1.8), [-2.5, -3.6, -4.8].pick_random())
 	if kind == 1 and e.species.begins_with("botella"):
 		e.position.x = randf_range(-2.2, 2.2)

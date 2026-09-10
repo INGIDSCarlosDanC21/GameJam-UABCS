@@ -2,6 +2,7 @@ shader_type spatial;
 render_mode diffuse_toon, cull_disabled;
 uniform sampler2D art : source_color, filter_linear_mipmap, repeat_disable;
 uniform vec2 texel;
+uniform float fade = 1.0;
 uniform vec3 tint : source_color = vec3(1.0);
 uniform vec4 glow_color : source_color = vec4(0.0);
 void fragment() {
@@ -14,6 +15,6 @@ void fragment() {
     }
     ALBEDO = mix(vec3(0.006), c.rgb * tint, smoothstep(0.05, 0.8, c.a));
     EMISSION = glow_color.rgb * glow_color.a * c.rgb * c.a;
-    ALPHA = max(c.a, edge);
+    ALPHA = max(c.a, edge) * fade;
     ALPHA_SCISSOR_THRESHOLD = 0.15;
 }

@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://bgsfy0vlmul5n"
+path="res://.godot/imported/foca talvez.mp3-dc3f78c5a2d5da031ac5a8f18acd9ad3.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/effects/foca talvez.mp3"
+dest_files=["res://.godot/imported/foca talvez.mp3-dc3f78c5a2d5da031ac5a8f18acd9ad3.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://bdmdwe4f08h6u"
+path="res://.godot/imported/basura metal 3 pero es muy largo.mp3-e70383d0b81e09ceb594e83f0212d22a.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/effects/basura metal 3 pero es muy largo.mp3"
+dest_files=["res://.godot/imported/basura metal 3 pero es muy largo.mp3-e70383d0b81e09ceb594e83f0212d22a.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

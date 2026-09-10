@@ -18,6 +18,10 @@ var _initialized := false
 var _grip_bar: MeshInstance3D
 var _pressed_target: Node3D
 var _grip_ratio := 0.0
+var held_snail: Node3D
+var _elapsed := 0.0
+var _idle := 0.0
+var _last_aim := Vector3.FORWARD
 
 func _ready() -> void:
 	button_pressed.connect(_pressed)
@@ -54,16 +58,6 @@ func _ready() -> void:
 	_info.outline_size = 6
 	_info.position = Vector3(0, -0.24, -1.0)
 	_camera.add_child(_info)
-	var plate := MeshInstance3D.new()
-	var panel := BoxMesh.new()
-	panel.size = Vector3(0.88, 0.21, 0.008)
-	plate.mesh = panel
-	var panel_material := StandardMaterial3D.new()
-	panel_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	panel_material.albedo_color = Color("102535")
-	plate.material_override = panel_material
-	plate.position = _info.position + Vector3(0, 0, -0.012)
-	_camera.add_child(plate)
 
 func _part(parent: Node3D, mesh: Mesh, at: Vector3, mat: Material) -> void:
 	var part := MeshInstance3D.new()
@@ -76,6 +70,8 @@ func _part(parent: Node3D, mesh: Mesh, at: Vector3, mat: Material) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not get_viewport().use_xr and event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		_held = event.pressed
+		_idle = 0
+		if not _held: _release_snail()
 
 func _pressed(button: String) -> void:
 	if button == "trigger_click":
@@ -84,8 +80,19 @@ func _pressed(button: String) -> void:
 func _released(button: String) -> void:
 	if button == "trigger_click":
 		_held = false
+		_release_snail()
 
 func _physics_process(delta: float) -> void:
+	_elapsed += delta
+	_idle += delta
+	_info.modulate.a = move_toward(_info.modulate.a, 1.0 if _elapsed < 60 or _idle >= 5 or is_instance_valid(_target) else 0.0, delta)
+	if GameManager.stun_left > 0:
+		_held = false
+		_progress = 0
+		_info.text = "BLOQUEADO %.1f s" % GameManager.stun_left
+		_info.modulate.a = 1
+		_release_snail()
+		return
 	_grip_bar.scale.x = maxf(0.001, _grip_ratio)
 	_grip_bar.visible = _progress > 0
 	if not _held: _pressed_target = null
@@ -99,6 +106,8 @@ func _physics_process(delta: float) -> void:
 	var origin := global_position if vr else _camera.project_ray_origin(get_viewport().get_mouse_position())
 	var desired := -global_basis.z if vr else _camera.project_ray_normal(get_viewport().get_mouse_position())
 	_aim = desired.normalized()
+	if _aim.distance_to(_last_aim) > 0.015 or _held: _idle = 0
+	_last_aim = _aim
 	_ray.global_position = origin
 	_ray.global_basis = Basis.IDENTITY
 	_ray.target_position = _aim * 8.0
@@ -110,7 +119,11 @@ func _physics_process(delta: float) -> void:
 		hit = _ray.get_collider() as Node3D
 	_claw.global_position = point + (_camera.global_position - point).normalized() * 0.035
 	_claw.global_basis = _camera.global_basis
+	_claw.scale = Vector3.ONE * (1.0 + sin(_elapsed * 5.0) * 0.06)
 	_cooldown = maxf(0, _cooldown - delta)
+	if is_instance_valid(held_snail):
+		_info.text = "Arrastra el caracol al borde y suelta"
+		return
 	if hit != _target:
 		_clear_target()
 		_target = hit
@@ -140,10 +153,14 @@ func _physics_process(delta: float) -> void:
 		_target.on_click()
 		_progress = 0.0
 		_cooldown = 0.15 if GameManager.fever_left > 0 else 0.3
-		_held = false
+		if not is_instance_valid(held_snail): _held = false
 
 func _clear_target() -> void:
 	if is_instance_valid(_target) and _target.has_method("set_hovered"):
 		_target.set_hovered(false)
 	_target = null
 	_progress = 0.0
+
+func _release_snail() -> void:
+	if is_instance_valid(held_snail): held_snail.release()
+	held_snail = null

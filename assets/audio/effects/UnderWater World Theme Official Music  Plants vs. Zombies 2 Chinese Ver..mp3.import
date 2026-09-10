@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://dlpt6ps4u0sbk"
+path="res://.godot/imported/UnderWater World Theme Official Music  Plants vs. Zombies 2 Chinese Ver..mp3-58b6f1074fdc0707d3c27f9da03ac4a9.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/effects/UnderWater World Theme Official Music  Plants vs. Zombies 2 Chinese Ver..mp3"
+dest_files=["res://.godot/imported/UnderWater World Theme Official Music  Plants vs. Zombies 2 Chinese Ver..mp3-58b6f1074fdc0707d3c27f9da03ac4a9.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

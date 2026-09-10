@@ -57,3 +57,19 @@ Prueba reproducible: ejecutar Godot desde el proyecto con `--xr-mode off --scrip
 - Capturas y activaciones mediante la mira generan siete burbujas durante 1.5 s. Máximo doce grupos simultáneos.
 
 Pruebas: 20 verificaciones en PC/Vulkan, incluidas crecimiento, recompensa del aura, zigzag y caída vertical. Falta ajustar el balance mediante partidas reales en VR.
+
+## Actualización: enemigos, avisos y entradas curvas
+
+- Ancho base de peces reducido de 0.43 a 0.25 m; anguilas de 0.65 a 0.40 m. El crecimiento por profundidad es +10 % y tiene límite 1.55. Conservan zigzag y auras.
+- Entrada con giro y aparición gradual de 0.8 s. Al alcanzar el borde lateral giran en un arco hacia el fondo y se desvanecen durante 2.5 s antes de liberar recursos.
+- La luz local de la anguila solo es visible mientras está enojada y apta. El pez linterna apaga su luz al quedar no apto. Se asignaron las variantes no aptas nuevas.
+- Peces millonarios: 0.5 % en el sorteo normal, 1.5 % durante fiebre. Fiebre con marco dorado, fondo teñido y anuncio con cuenta atrás.
+- Robots: +10 monedas de coste por profundidad, además del coste por mejora. Máximo diez activos; conservan su vida útil de 60 segundos.
+- Alarma: FNAF 3 ventilation error tiene reproductor exclusivo; no compite por las seis voces de efectos. Repite mientras haya salud inferior a 30, sin reiniciar el clip cada pitido. Se detiene al recuperar salud o perder.
+- Pez globo: aparece cerca del cursor, describe una órbita lenta durante cinco segundos y se va si se ignora. Al tocarlo se infla, bloquea la interacción cinco segundos, reduce iluminación y aplica blanco y negro; después se aleja y desaparece. La cabeza VR mantiene siempre su seguimiento.
+- Caracoles: tres variantes adheridas a una posición relativa a la cámara. Mantén el gatillo/clic para sujetar, lleva el cursor hacia el borde y suelta. Se desprenden si están fuera del radio central de 0.40 m a la distancia de agarre. Si sueltas en el centro se vuelven a pegar. Máximo tres hostiles; aparece uno cada 18 s aproximadamente.
+- Ayuda: texto sin recuadro opaco. Visible durante el primer minuto, luego se desvanece y vuelve tras cinco segundos sin actividad; la ficha del objeto señalado continúa disponible. Cursor con pulsación suave.
+
+Sonidos conectados: botones (laser1, burbuja pop, laser2), foca (foca talvez), pez globo (se infla pez globo), caracol (Gary the Snail), lanzamiento (lancer-splat), derrota y linterna no apta (pez linterna muere). M4A convertidos a MP3 para Godot; originales conservados. Los otros clips quedan disponibles para asignar desde el Inspector.
+
+Validación: 27 comprobaciones en PC/Vulkan, incluidas hostiles, lanzamiento, apagado de linterna y precios/límite de robots. Se revisaron capturas del filtro dorado y del blanco y negro. Falta la prueba binocular en el visor físico, especialmente el shader de pantalla y la distancia de agarre de caracoles.

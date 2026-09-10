@@ -21,6 +21,7 @@ var experience := 0
 var fever_left := 0.0
 var active_cleaners := 0
 var defeated := false
+var stun_left := 0.0
 var _pitch_fx: AudioEffectPitchShift
 
 func _ready() -> void:
@@ -34,6 +35,7 @@ func _ready() -> void:
 	_apply_audio()
 
 func _process(delta: float) -> void:
+	stun_left = maxf(0, stun_left - delta)
 	if fever_left > 0 and not defeated:
 		fever_left = maxf(0, fever_left - delta)
 		if fever_left == 0:
@@ -102,10 +104,10 @@ func buy_bait() -> bool:
 	return true
 
 func filter_cost() -> int:
-	return FILTER_COST + filter_level * 10
+	return FILTER_COST + filter_level * 10 + depth * 10
 
 func buy_filter() -> bool:
-	if defeated or coins < filter_cost() or active_cleaners >= 3: return false
+	if defeated or coins < filter_cost() or active_cleaners >= 10: return false
 	coins -= filter_cost()
 	filter_level += 1
 	active_cleaners += 1
@@ -143,5 +145,6 @@ func restart() -> void:
 	fever_left = 0
 	active_cleaners = 0
 	defeated = false
+	stun_left = 0.0
 	_apply_audio()
 	get_tree().reload_current_scene()

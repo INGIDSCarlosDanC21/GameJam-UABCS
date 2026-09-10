@@ -24,6 +24,9 @@ var _base_y := 0.0
 var _base_z := 0.0
 var _phase := randf() * TAU
 var _rage_timer := 0.0
+var _local_light: OmniLight3D
+var _exit_age := -1.0
+var _exit_start := Vector3.ZERO
 var _notifier: VisibleOnScreenNotifier3D
 var _material: ShaderMaterial
 @onready var _sprite: Sprite3D = $Sprite3D
@@ -42,10 +45,10 @@ func _ready() -> void:
 		add_to_group("fish")
 		if species.is_empty():
 			var r := randf()
-			species = "pez azul" if r < 0.45 else ("pez naranja" if r < 0.8 else ("anginla" if r < 0.97 else "pez dorado millonario"))
+			species = "pez azul" if r < 0.45 else ("pez naranja" if r < 0.8 else ("anginla" if r < 0.995 else "pez dorado millonario"))
 			if GameManager.depth > 0 and randf() < 0.15: species = "pez linterna"
 		rarity = 3 if "dorado" in species else (1 if "anginla" in species or "linterna" in species else 0)
-		size_factor = [0.9, 1.1, 1.4].pick_random() * minf(2.6, 1.0 + GameManager.depth * 0.22)
+		size_factor = [0.9, 1.1, 1.4].pick_random() * minf(1.55, 1.0 + GameManager.depth * 0.10)
 		aura = randi_range(1, 3) if randf() < minf(0.65, 0.18 + GameManager.depth * 0.08) else 0
 		speed = (0.32 if "anginla" in species else 0.23) * GameManager.difficulty()
 	elif kind == Kind.TRASH:
@@ -66,7 +69,7 @@ func _ready() -> void:
 	if aura > 0:
 		_halo = MeshInstance3D.new()
 		var quad := QuadMesh.new()
-		quad.size = Vector2.ONE * 0.8 * size_factor
+		quad.size = Vector2.ONE * 0.48 * size_factor
 		_halo.mesh = quad
 		var halo_mat := ShaderMaterial.new()
 		halo_mat.shader = preload("res://shaders/aura.gdshader")
@@ -76,8 +79,10 @@ func _ready() -> void:
 		add_child(_halo)
 	_notifier = VisibleOnScreenNotifier3D.new()
 	add_child(_notifier)
-	if "linterna" in species:
+	if "linterna" in species or "anginla" in species:
 		var light := OmniLight3D.new()
+		_local_light = light
+		light.visible = "linterna" in species
 		light.light_color = Color("fff0a6")
 		light.light_energy = 2.8
 		light.omni_range = 2.2
@@ -97,7 +102,7 @@ func _apply_art(path: String, replacement: Texture2D = null) -> void:
 	_sprite.texture = texture
 	_sprite.region_enabled = true
 	_sprite.region_rect = Rect2(bounds.grow(5).intersection(Rect2i(Vector2i.ZERO, Vector2i(texture.get_size()))))
-	var width := (0.65 if "anginla" in species else 0.43) * size_factor
+	var width := (0.4 if "anginla" in species else 0.25) * size_factor
 	_sprite.pixel_size = width / maxi(1, bounds.size.x)
 	_sprite.flip_h = kind != Kind.TRASH and direction < 0
 	_material.set_shader_parameter("art", texture)
@@ -110,12 +115,26 @@ func _apply_art(path: String, replacement: Texture2D = null) -> void:
 func _physics_process(delta: float) -> void:
 	if GameManager.defeated: return
 	_age += delta
+	if _exit_age >= 0:
+		_exit_age += delta
+		var t := _exit_age
+		position = _exit_start + Vector3(direction * sin(t) * 1.8, sin(t * 0.8) * 0.4, -t * t * 2.0)
+		rotation.y = -direction * minf(t, PI * 0.45)
+		_material.set_shader_parameter("fade", maxf(0, 1.0 - t / 2.5))
+		if t > 2.5: _finish_exit()
+		return
 	if unsuitable:
 		position.y -= 0.24 * delta
 		position.x += direction * 0.04 * delta
 		_sink_age += delta
 		if (_sink_age > 1 and not _notifier.is_on_screen()) or _sink_age > 12: queue_free()
 		return
+	if kind != Kind.TRASH and _age < 0.8:
+		rotation.y = direction * (1.0 - _age / 0.8) * 1.1
+		_material.set_shader_parameter("fade", _age / 0.8)
+	else:
+		rotation.y = 0
+		_material.set_shader_parameter("fade", 1.0)
 	var fever := GameManager.fever_left > 0 and kind == Kind.FISH
 	if kind == Kind.TRASH and species.begins_with("botella"):
 		position.y -= (0.4 + GameManager.depth * 0.06) * delta
@@ -131,11 +150,16 @@ func _physics_process(delta: float) -> void:
 			for fish in get_tree().get_nodes_in_group("fish"):
 				if fish != self and is_instance_valid(fish) and global_position.distance_to(fish.global_position) < 0.85:
 					fish.make_unsuitable()
-	if _age > lifetime or absf(position.x) > 3.4: _expire()
+	if _age > lifetime or absf(position.x) > 3.1:
+		if kind == Kind.TRASH: _expire()
+		else:
+			_exit_age = 0
+			_exit_start = position
 
 func on_target_pressed() -> void:
 	if "anginla" in species and not unsuitable and not GameManager.defeated:
 		angry = true
+		if _local_light: _local_light.show()
 		_apply_art(_texture_path("anginla enojada"))
 
 func on_click() -> void:
@@ -152,10 +176,14 @@ func on_click() -> void:
 func make_unsuitable() -> void:
 	if unsuitable or _clicked or kind != Kind.FISH: return
 	unsuitable = true
+	_exit_age = -1
+	if _local_light: _local_light.hide()
+	if "linterna" in species: GameManager.sound_requested.emit("lantern_out")
 	if _halo: _halo.hide()
 	collision_layer = 0
 	remove_from_group("interactable")
 	var found := false
+	if species == "anginla": noapto_texture = load("res://assets/art/anginla noapta.png")
 	if species == "pez dorado millonario": noapto_texture = load("res://assets/art/pez dorado noapto.png")
 	if noapto_texture:
 		_apply_art("", noapto_texture)
@@ -188,6 +216,9 @@ func _expire() -> void:
 	if kind == Kind.TRASH: GameManager.ignore_trash()
 	elif kind == Kind.FISH and not angry: GameManager.let_fish_go()
 	queue_free()
+
+func _finish_exit() -> void:
+	_expire()
 
 func get_stats_text() -> String:
 	if kind == Kind.SEAL: return "FOCA / POWER UP\nFiebre de peces: 10 segundos"

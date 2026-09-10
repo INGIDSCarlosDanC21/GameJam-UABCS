@@ -11,11 +11,25 @@ var _descend: Area3D
 var _restart: Area3D
 var _status: Label3D
 var _pulse := 0.0
+var _hostile_timer := 18.0
+var _screen_mat: ShaderMaterial
+var _screen: MeshInstance3D
 func _ready() -> void:
 	GameManager.cleaner_bought.connect(_buy_cleaner)
 	GameManager.bubbles_requested.connect(_bubbles)
 	GameManager.defeat_changed.connect(_defeat)
 	GameManager.fever_changed.connect(_fever)
+	var camera := get_parent().get_node("XROrigin3D/XRCamera3D")
+	_screen = MeshInstance3D.new()
+	var quad := QuadMesh.new()
+	quad.size = Vector2(2,2)
+	_screen.mesh = quad
+	_screen.position.z = -0.11
+	_screen_mat = ShaderMaterial.new()
+	_screen_mat.shader = preload("res://shaders/event_screen.gdshader")
+	_screen_mat.render_priority = -100
+	_screen.material_override = _screen_mat
+	camera.add_child.call_deferred(_screen)
 	_descend = _button(2)
 	_restart = _button(3)
 	_restart.hide()
@@ -61,11 +75,23 @@ func _button(type: int) -> Area3D:
 
 func _process(delta: float) -> void:
 	_pulse += delta
+	_screen.visible = not GameManager.defeated and (GameManager.fever_left > 0 or GameManager.stun_left > 0)
+	_screen_mat.set_shader_parameter("fever", 1.0 if GameManager.fever_left > 0 else 0.0)
+	_screen_mat.set_shader_parameter("stun", 1.0 if GameManager.stun_left > 0 else 0.0)
+	_hostile_timer -= delta
+	if _hostile_timer <= 0 and not GameManager.defeated:
+		_hostile_timer = 18.0
+		if get_tree().get_nodes_in_group("hostiles").size() < 3:
+			var hostile := Area3D.new()
+			hostile.set_script(preload("res://scripts/Hostile.gd"))
+			hostile.snail = randf() < 0.5
+			add_child(hostile)
 	var alive := not GameManager.defeated
 	var fever := GameManager.fever_left > 0 and alive
 	var health := GameManager.ocean_health / 100.0
 	var illumination := maxf(0.018, health * health) * pow(0.75, GameManager.depth)
-	if fever: illumination = maxf(0.65, illumination)
+	if fever: illumination = maxf(0.9, illumination)
+	if GameManager.stun_left > 0: illumination = 0.025
 	if _env:
 		_env.background_energy_multiplier = lerpf(_env.background_energy_multiplier, illumination, 1.0 - exp(-2 * delta))
 		_env.ambient_light_energy = 0.45 * illumination
@@ -84,7 +110,7 @@ func _process(delta: float) -> void:
 	_descend.visible = GameManager.can_descend()
 	_descend.collision_layer = 2 if _descend.visible else 0
 	if alive:
-		_status.text = "NIVEL %d  /  %d MONEDAS\nOCÉANO %d%%  |  PROFUNDIDAD %d\n%s" % [GameManager.level, GameManager.coins, int(GameManager.ocean_health), GameManager.depth, ("FIEBRE %.1f s" % GameManager.fever_left) if fever else ("Progreso %d/6" % GameManager.experience)]
+		_status.text = "NIVEL %d  /  %d MONEDAS\nOCÉANO %d%%  |  PROFUNDIDAD %d\n%s" % [GameManager.level, GameManager.coins, int(GameManager.ocean_health), GameManager.depth, ("¡FIEBRE DE PECES! x2  %.1f s" % GameManager.fever_left) if fever else ("Progreso %d/6" % GameManager.experience)]
 	_check -= delta
 	if alive and _check <= 0:
 		_check = 0.2
@@ -116,9 +142,11 @@ func _fever(active: bool) -> void:
 
 func _defeat(value: bool) -> void:
 	if not value: return
+	GameManager.sound_requested.emit("death")
 	for entity in get_tree().get_nodes_in_group("entities"): entity.queue_free()
 	for cleaner in get_tree().get_nodes_in_group("cleaners"): cleaner.queue_free()
 	GameManager.active_cleaners = 0
+	for hostile in get_tree().get_nodes_in_group("hostiles"): hostile.queue_free()
 	_status.hide()
 	for shop_name in ["ShopBait", "ShopFilter"]:
 		var shop := get_parent().get_node("Cabin/" + shop_name)
