@@ -193,6 +193,7 @@ func make_unsuitable() -> void:
 	var found := false
 	if species == "anginla": noapto_texture = load("res://assets/art/anginla noapta.png")
 	if species == "pez dorado millonario": noapto_texture = load("res://assets/art/pez dorado noapto.png")
+	if species == "pez oracles": noapto_texture = load("res://assets/art/oracles noapto.png")
 	if noapto_texture:
 		_apply_art("", noapto_texture)
 		found = true
