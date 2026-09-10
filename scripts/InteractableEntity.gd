@@ -45,7 +45,7 @@ func _ready() -> void:
 		add_to_group("fish")
 		if species.is_empty():
 			var r := randf()
-			species = "pez azul" if r < 0.45 else ("pez naranja" if r < 0.8 else ("anginla" if r < 0.995 else "pez dorado millonario"))
+			species = "pez oracles" if GameManager.depth > 0 and r < 0.03 else ("pez azul" if r < 0.45 else ("pez naranja" if r < 0.8 else ("anginla" if r < 0.995 else "pez dorado millonario")))
 			if GameManager.depth > 0 and randf() < 0.15: species = "pez linterna"
 		rarity = 3 if "dorado" in species else (1 if "anginla" in species or "linterna" in species else 0)
 		size_factor = [0.9, 1.1, 1.4].pick_random() * minf(1.55, 1.0 + GameManager.depth * 0.10)
@@ -116,6 +116,7 @@ func _apply_art(path: String, replacement: Texture2D = null) -> void:
 
 func _physics_process(delta: float) -> void:
 	if GameManager.defeated: return
+	delta *= GameManager.world_time_scale()
 	_age += delta
 	if _exit_age >= 0:
 		_exit_age += delta
@@ -171,6 +172,8 @@ func on_click() -> void:
 		return
 	_clicked = true
 	if kind == Kind.SEAL: GameManager.start_fever()
+	elif "oracles" in species:
+		GameManager.start_slow_time()
 	elif kind == Kind.TRASH: GameManager.clean_trash()
 	else:
 		var reward := GameManager.fish_stats(rarity, size_factor, aura)
@@ -228,6 +231,7 @@ func _finish_exit() -> void:
 func get_stats_text() -> String:
 	if kind == Kind.SEAL: return "FOCA / POWER UP\nFiebre de peces: 10 segundos"
 	if kind == Kind.TRASH: return "%s / +5 monedas\nLimpia para proteger a los peces" % species.capitalize()
+	if "oracles" in species: return "PEZ ORACLE / PODER\nRalentiza el tiempo durante 5 segundos"
 	if "anginla" in species: return "ANGUILA / No molestar\nAl tocarla contamina peces cercanos"
 	var stats := GameManager.fish_stats(rarity, size_factor, aura)
 	return "%s | +%d monedas / -%.1f salud\n%.2f m/s | agarre %.2f s | aura %d/3" % [species.capitalize(), stats.reward, stats.damage, speed, capture_time, aura]

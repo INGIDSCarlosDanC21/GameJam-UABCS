@@ -24,19 +24,19 @@ func _ready() -> void:
 	_panel.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	var backing := MeshInstance3D.new()
 	var box := BoxMesh.new()
-	box.size = Vector3(1.25, 0.65, 0.035) if item == Item.RESTART else Vector3(0.66, 0.3, 0.035)
+	box.size = Vector3(1.25, 0.65, 0.035) if item == Item.RESTART else Vector3(0.72, 0.78, 0.035)
 	backing.mesh = box
 	backing.material_override = _panel
 	backing.position = _label.position + Vector3(0, 0, -0.03)
 	add_child(backing)
 	if button_texture or not filter_icons.is_empty():
 		_art = Sprite3D.new()
-		_art.position.z = 0.002
+		_art.position = Vector3(0, 0.12, 0.002)
 		add_child(_art)
-		_label.position.y = -0.18
+		_label.position.y = -0.31
 	var border := MeshInstance3D.new()
 	var outer := BoxMesh.new()
-	outer.size = Vector3(1.28, 0.68, 0.03) if item == Item.RESTART else Vector3(0.69, 0.33, 0.03)
+	outer.size = Vector3(1.28, 0.68, 0.03) if item == Item.RESTART else Vector3(0.75, 0.81, 0.03)
 	border.mesh = outer
 	var ink := StandardMaterial3D.new()
 	ink.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -49,7 +49,7 @@ func _ready() -> void:
 	_label.outline_size = 3
 	_label.modulate = Color("f2f8ff")
 	var shape := BoxShape3D.new()
-	shape.size = Vector3(1.25, 0.65, 0.07) if item == Item.RESTART else Vector3(0.66, 0.3, 0.07)
+	shape.size = Vector3(1.25, 0.65, 0.07) if item == Item.RESTART else Vector3(0.72, 0.78, 0.07)
 	$CollisionShape3D.shape = shape
 	GameManager.coins_changed.connect(_refresh)
 	GameManager.level_changed.connect(func(_value: int): _refresh(GameManager.coins))
@@ -95,7 +95,7 @@ func _refresh(coins: int) -> void:
 			icon = filter_icons[mini(GameManager.cleaner_quality() - 1, filter_icons.size() - 1)]
 		if icon:
 			_art.texture = icon
-			_art.pixel_size = 0.64 / icon.get_width()
+			_art.pixel_size = 0.36 / icon.get_width()
 	_panel.albedo_color = Color("14576c") if _hover else Color("102d43")
 	if coins < price:
 		_panel.albedo_color = Color("39404d")

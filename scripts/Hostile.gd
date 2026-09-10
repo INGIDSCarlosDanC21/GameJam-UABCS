@@ -43,6 +43,7 @@ func _physics_process(delta: float) -> void:
 	if GameManager.defeated:
 		queue_free()
 		return
+	delta *= GameManager.world_time_scale()
 	age += delta
 	global_basis = _camera.global_basis
 	if leaving:

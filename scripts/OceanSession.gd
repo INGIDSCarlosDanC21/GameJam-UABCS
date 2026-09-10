@@ -83,11 +83,12 @@ func _button(type: int) -> Area3D:
 	return button
 
 func _process(delta: float) -> void:
+	var world_delta := delta * GameManager.world_time_scale()
 	_pulse += delta
 	_screen.visible = not GameManager.defeated and (GameManager.fever_left > 0 or GameManager.stun_left > 0)
 	_screen_mat.set_shader_parameter("fever", 1.0 if GameManager.fever_left > 0 else 0.0)
 	_screen_mat.set_shader_parameter("stun", 1.0 if GameManager.stun_left > 0 else 0.0)
-	_hostile_timer -= delta
+	_hostile_timer -= world_delta
 	if _hostile_timer <= 0 and not GameManager.defeated and not GameManager.tutorial_active:
 		_hostile_timer = maxf(3.5, 16.0 - GameManager.depth * 2.2)
 		if get_tree().get_nodes_in_group("hostiles").size() < mini(10, 2 + GameManager.depth * 2):
@@ -117,7 +118,8 @@ func _process(delta: float) -> void:
 		_alarm_clock = 1.2
 		GameManager.sound_requested.emit("alarm")
 	if alive:
-		_status.text = "NIVEL %d  /  %d MONEDAS\nOCÉANO %d%%  |  PROFUNDIDAD %d\n%s" % [GameManager.level, GameManager.coins, int(GameManager.ocean_health), GameManager.depth, ("¡FIEBRE DE PECES! x2  %.1f s" % GameManager.fever_left) if fever else ("Progreso %d/6" % GameManager.experience)]
+		var event_text := "TIEMPO LENTO  %.1f s" % GameManager.slow_time_left if GameManager.slow_time_left > 0 else ("¡FIEBRE DE PECES! x2  %.1f s" % GameManager.fever_left if fever else "Progreso %d/6")
+		_status.text = "NIVEL %d  /  %d MONEDAS\nOCÉANO %d%%  |  PROFUNDIDAD %d\n%s" % [GameManager.level, GameManager.coins, int(GameManager.ocean_health), GameManager.depth, event_text]
 	_check -= delta
 	if alive and _check <= 0:
 		_check = 0.2

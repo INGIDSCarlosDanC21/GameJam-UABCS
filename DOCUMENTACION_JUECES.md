@@ -29,6 +29,7 @@ El tutorial 3D aparece al iniciar y se puede omitir con el botón inferior.
 | Profundidad | Aumenta cada cinco niveles. Oscurece el entorno y aumenta basura, caracoles y tamaño/valor de peces. |
 | Riesgos | La basura vuelve no aptos a los peces. Los caracoles bloquean la vista hasta ser arrojados fuera. La anguila enfadada contamina peces cercanos. El pez globo aturde y apaga las luces temporalmente. |
 | Evento de foca | La foca activa Fiebre de Peces: un evento temporal, dorado y muy visible con peces rápidos y doble recompensa. |
+| Pez Oracle | Desde la primera profundidad puede aparecer. Al capturarlo ralentiza durante cinco segundos peces, basura, peligros, robots y aparición de entidades, dando un breve respiro táctico. |
 
 ## Diseño audiovisual
 

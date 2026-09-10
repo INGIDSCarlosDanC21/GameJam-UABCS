@@ -23,6 +23,7 @@ var fever_left := 0.0
 var active_cleaners := 0
 var defeated := false
 var stun_left := 0.0
+var slow_time_left := 0.0
 var tutorial_active := true
 var tutorial_completed := false
 var _pitch_fx: AudioEffectPitchShift
@@ -39,6 +40,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	stun_left = maxf(0, stun_left - delta)
+	slow_time_left = maxf(0, slow_time_left - delta)
 	if fever_left > 0 and not defeated:
 		fever_left = maxf(0, fever_left - delta)
 		if fever_left == 0:
@@ -66,6 +68,13 @@ func start_fever() -> void:
 	fever_left = 10.0
 	fever_changed.emit(true)
 	sound_requested.emit("fever")
+
+func start_slow_time() -> void:
+	if defeated: return
+	slow_time_left = 5.0
+
+func world_time_scale() -> float:
+	return 0.38 if slow_time_left > 0 else 1.0
 
 func can_descend() -> bool:
 	return not defeated and level >= (depth + 1) * 5
@@ -154,6 +163,7 @@ func restart() -> void:
 	active_cleaners = 0
 	defeated = false
 	stun_left = 0.0
+	slow_time_left = 0.0
 	_apply_audio()
 	tutorial_active = not tutorial_completed
 	get_tree().reload_current_scene()

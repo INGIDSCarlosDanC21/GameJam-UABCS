@@ -24,6 +24,7 @@ func set_quality(value: int) -> void:
 	_sprite.modulate = [Color.WHITE, Color("96dcff"), Color("ffdc80")][quality - 1]
 func _physics_process(delta: float) -> void:
 	if GameManager.defeated: return
+	delta *= GameManager.world_time_scale()
 	age += delta
 	_bubble_time -= delta
 	if _bubble_time <= 0:
