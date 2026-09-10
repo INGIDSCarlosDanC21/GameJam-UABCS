@@ -160,7 +160,7 @@ entity_scene = ExtResource("5_ent")
 volume_db = -8.0
 
 [node name="Sketchfab_Scene" parent="." unique_id=983537497 instance=ExtResource("7_nxtc6")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.004464805, -1.683303, 0.81687045)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0044257343, -1.6828701, 0.81684643)
 
 [node name="CartoonStyle" type="Node" parent="." unique_id=264437017]
 script = ExtResource("8_style")

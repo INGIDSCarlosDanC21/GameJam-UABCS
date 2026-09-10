@@ -23,6 +23,10 @@ func _ready() -> void:
 	monitoring = false
 	monitorable = true
 	_apply_placeholder()
+	_base_y = position.y
+	_base_z = position.z
+	capture_time = (0.35 + rarity * 0.14 + (size_factor - 0.75) * 0.2) if kind == Kind.FISH else 0.25
+	lifetime = 6.0 / speed
 
 
 func setup(p_kind: Kind, p_dir: float) -> void:
@@ -34,7 +38,8 @@ func setup(p_kind: Kind, p_dir: float) -> void:
 
 func _physics_process(delta: float) -> void:
 	position.x += direction * speed * delta
-	position.y += sin(Time.get_ticks_msec() * 0.004 + position.z) * 0.12 * delta
+	position.y = _base_y + sin(_age * (2.0 + rarity * 0.5) + _phase) * (0.06 + rarity * 0.025)
+	position.z = _base_z + sin(_age * 0.7 + _phase) * 0.16
 	_age += delta
 	if _age >= lifetime:
 		_expire()
@@ -71,6 +76,10 @@ static var art_cache: Dictionary = {}
 var rarity: int = 0
 var size_factor: float = 1.0
 var species: String = ""
+var capture_time: float = 0.3
+var _base_y: float
+var _base_z: float
+var _phase: float = randf() * TAU
 
 func _apply_placeholder() -> void:
 	if species.is_empty():
@@ -115,3 +124,8 @@ func _apply_placeholder() -> void:
 	var box := BoxShape3D.new()
 	box.size = Vector3(width, bounds.size.y * _sprite.pixel_size, 0.08)
 	$CollisionShape3D.shape = box
+func get_stats_text() -> String:
+	if kind == Kind.TRASH:
+		return "%s | +5 monedas\nLimpieza %.2f s" % [species.capitalize(), capture_time]
+	var stats := GameManager.fish_stats(rarity, size_factor)
+	return "%s | %s\n+%d monedas / -%.1f salud\n%.2f m/s | agarre %.2f s | %.1f m" % [species.capitalize(), ["Común", "Especial", "Raro", "Legendario"][rarity], stats.reward, stats.damage, speed, capture_time, absf(position.z)]

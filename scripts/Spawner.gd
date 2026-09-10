@@ -24,5 +24,5 @@ func _spawn() -> void:
 	var fish_chance := clampf(0.45 + float(GameManager.bait_level) * 0.08, 0.45, 0.8)
 	var kind: int = e.Kind.FISH if randf() < fish_chance else e.Kind.TRASH
 	e.setup(kind, dir)
-	e.position = Vector3(-2.6 if from_left else 2.6, randf_range(1.05, 1.75), randf_range(-6.2, -2.4))
+	e.position = Vector3(-2.6 if from_left else 2.6, randf_range(1.05, 1.75), [-2.5, -3.9, -5.6].pick_random() + randf_range(-0.15, 0.15))
 	add_child(e)
