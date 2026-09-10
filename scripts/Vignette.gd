@@ -19,5 +19,5 @@ func _ready() -> void:
 func _on_health(value: float) -> void:
 	var t := 1.0 - value / GameManager.MAX_HEALTH
 	# Negro (agotamiento) + rojo (alarma) hacia derrota.
-	var col := Color(lerpf(0.0, 0.85, t * t), 0.0, 0.0, t * 0.62)
+	var col := Color(lerpf(0.0, 0.85, t * t), 0.0, 0.0, t * 0.12)
 	_mat.albedo_color = col

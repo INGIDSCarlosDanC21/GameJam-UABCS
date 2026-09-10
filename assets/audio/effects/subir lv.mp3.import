@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://b3aqmo8gehpm0"
+path="res://.godot/imported/subir lv.mp3-4d45c630f010220a912d9dde049115f4.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/effects/subir lv.mp3"
+dest_files=["res://.godot/imported/subir lv.mp3-4d45c630f010220a912d9dde049115f4.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

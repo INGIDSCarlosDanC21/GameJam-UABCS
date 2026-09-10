@@ -1,131 +1,178 @@
 extends Area3D
-## Entidad fantasma: no colisiona con otras entidades, solo es detectable por el RayCast.
-
-enum Kind { FISH, TRASH }
-
-const LAYER_INTERACTABLE := 2
-
-@export var kind: Kind = Kind.FISH
-@export var speed: float = 0.55
-@export var lifetime: float = 9.0
-
-var direction: float = 1.0
-var _age: float = 0.0
-var _clicked: bool = false
-
-@onready var _sprite: Sprite3D = $Sprite3D
-
-
-func _ready() -> void:
-	add_to_group("interactable")
-	collision_layer = LAYER_INTERACTABLE
-	collision_mask = 0
-	monitoring = false
-	monitorable = true
-	_apply_placeholder()
-	_base_y = position.y
-	_base_z = position.z
-	capture_time = (0.35 + rarity * 0.14 + (size_factor - 0.75) * 0.2) if kind == Kind.FISH else 0.25
-	lifetime = 6.0 / speed
-
-
-func setup(p_kind: Kind, p_dir: float) -> void:
-	kind = p_kind
-	direction = p_dir
-	if is_node_ready():
-		_apply_placeholder()
-
-
-func _physics_process(delta: float) -> void:
-	position.x += direction * speed * delta
-	position.y = _base_y + sin(_age * (2.0 + rarity * 0.5) + _phase) * (0.06 + rarity * 0.025)
-	position.z = _base_z + sin(_age * 0.7 + _phase) * 0.16
-	_age += delta
-	if _age >= lifetime:
-		_expire()
-
-
-func on_click() -> void:
-	if _clicked:
-		return
-	_clicked = true
-	match kind:
-		Kind.FISH:
-			GameManager.catch_fish(rarity, size_factor)
-		Kind.TRASH:
-			GameManager.clean_trash()
-	queue_free()
-
-
-func _expire() -> void:
-	if _clicked:
-		return
-	match kind:
-		Kind.FISH:
-			GameManager.let_fish_go()
-		Kind.TRASH:
-			GameManager.ignore_trash()
-	queue_free()
-
-
-const FISH_ART := ["pez azul", "pez naranja", "anginla", "anginla enojada", "pez dorado millonario"]
-const FISH_WEIGHTS := [40, 30, 18, 10, 2]
+enum Kind { FISH, TRASH, SEAL }
+const FISH_ART := ["pez azul", "pez naranja", "anginla", "pez dorado millonario"]
 const TRASH_ART := ["botella rota inferiror", "botella rota superior", "lata", "monton de basura", "soporte de cerveza"]
 const INK = preload("res://shaders/sprite_ink.gdshader")
 static var art_cache: Dictionary = {}
-var rarity: int = 0
-var size_factor: float = 1.0
-var species: String = ""
-var capture_time: float = 0.3
-var _base_y: float
-var _base_z: float
-var _phase: float = randf() * TAU
+@export var kind: Kind = Kind.FISH
+@export var speed := 0.25
+@export var lifetime := 22.0
+@export var noapto_texture: Texture2D
+var direction := 1.0
+var rarity := 0
+var size_factor := 1.0
+var species := ""
+var capture_time := 0.18
+var unsuitable := false
+var angry := false
+var _clicked := false
+var _age := 0.0
+var _sink_age := 0.0
+var _base_y := 0.0
+var _base_z := 0.0
+var _phase := randf() * TAU
+var _rage_timer := 0.0
+var _notifier: VisibleOnScreenNotifier3D
+var _material: ShaderMaterial
+@onready var _sprite: Sprite3D = $Sprite3D
 
-func _apply_placeholder() -> void:
-	if species.is_empty():
-		if kind == Kind.FISH:
-			var roll := randi_range(1, 100)
-			var index := 0
-			while roll > FISH_WEIGHTS[index]:
-				roll -= FISH_WEIGHTS[index]
-				index += 1
-			species = FISH_ART[index]
-			rarity = [0, 0, 1, 2, 3][index]
-			speed = [0.55, 0.6, 0.7, 0.9, 0.4][index]
-			size_factor = [0.75, 1.0, 1.5].pick_random()
-		else:
-			species = TRASH_ART.pick_random()
-			speed = 0.35
-			add_to_group("trash")
-	var path := "res://assets/art/" + species + ".png"
-	if not art_cache.has(path):
-		var texture := load(path) as Texture2D
-		var bounds := texture.get_image().get_used_rect()
-		art_cache[path] = [texture, bounds]
-	var texture: Texture2D = art_cache[path][0]
-	var bounds: Rect2i = art_cache[path][1]
+func setup(value: Kind, dir: float) -> void:
+	kind = value
+	direction = dir
+
+func _ready() -> void:
+	add_to_group("entities")
+	add_to_group("interactable")
+	collision_layer = 2
+	collision_mask = 0
+	monitoring = false
+	if kind == Kind.FISH:
+		add_to_group("fish")
+		if species.is_empty():
+			var r := randf()
+			species = "pez azul" if r < 0.45 else ("pez naranja" if r < 0.8 else ("anginla" if r < 0.97 else "pez dorado millonario"))
+			if GameManager.depth > 0 and randf() < 0.15: species = "pez linterna"
+		rarity = 3 if "dorado" in species else (1 if "anginla" in species or "linterna" in species else 0)
+		size_factor = [0.9, 1.1, 1.4].pick_random()
+		speed = (0.32 if "anginla" in species else 0.23) * GameManager.difficulty()
+	elif kind == Kind.TRASH:
+		add_to_group("trash")
+		species = TRASH_ART.pick_random()
+		speed = 0.18
+	else:
+		species = "foca"
+		speed = 0.2
+	capture_time = 0.16 + rarity * 0.035 + (GameManager.difficulty() - 1) * 0.04
+	_base_y = position.y
+	_base_z = position.z
+	lifetime = 6.3 / maxf(speed, 0.1)
+	_material = ShaderMaterial.new()
+	_material.shader = INK
+	_sprite.material_override = _material
+	_apply_art(_texture_path(species))
+	_notifier = VisibleOnScreenNotifier3D.new()
+	add_child(_notifier)
+	if "linterna" in species:
+		var light := OmniLight3D.new()
+		light.light_color = Color("fff0a6")
+		light.light_energy = 2.8
+		light.omni_range = 2.2
+		light.position = Vector3(0.16, 0.1, 0.2)
+		add_child(light)
+
+func _texture_path(name_text: String) -> String:
+	var path := "res://assets/art/" + name_text + ".png"
+	return path if ResourceLoader.exists(path) else "res://assets/art/pez azul.png"
+
+func _apply_art(path: String, replacement: Texture2D = null) -> void:
+	var texture: Texture2D = replacement if replacement else load(path) as Texture2D
+	if not texture: return
+	var key := texture.get_instance_id()
+	if not art_cache.has(key): art_cache[key] = texture.get_image().get_used_rect()
+	var bounds: Rect2i = art_cache[key]
 	_sprite.texture = texture
 	_sprite.region_enabled = true
 	_sprite.region_rect = Rect2(bounds.grow(5).intersection(Rect2i(Vector2i.ZERO, Vector2i(texture.get_size()))))
-	var width := (0.65 if species.begins_with("anginla") else 0.38) * size_factor
-	if species == "monton de basura":
-		width = 0.6
-	_sprite.pixel_size = width / float(maxi(bounds.size.x, 1))
-	_sprite.billboard = BaseMaterial3D.BILLBOARD_DISABLED
-	_sprite.flip_h = kind == Kind.FISH and direction < 0.0
-	_sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
-	var mat := ShaderMaterial.new()
-	mat.shader = INK
-	mat.set_shader_parameter("art", texture)
-	mat.set_shader_parameter("texel", Vector2.ONE / texture.get_size())
-	var colors := [Color(0, 0, 0, 0), Color(0.2, 0.8, 1, 0.15), Color(0.8, 0.3, 1, 0.25), Color(1, 0.75, 0.1, 0.4)]
-	mat.set_shader_parameter("glow_color", colors[rarity])
-	_sprite.material_override = mat
+	var width := (0.65 if "anginla" in species else 0.43) * size_factor
+	_sprite.pixel_size = width / maxi(1, bounds.size.x)
+	_sprite.flip_h = kind != Kind.TRASH and direction < 0
+	_material.set_shader_parameter("art", texture)
+	_material.set_shader_parameter("texel", Vector2.ONE / texture.get_size())
+	_material.set_shader_parameter("glow_color", Color(1, 0.7, 0.15, 0.2) if rarity == 3 else Color(0, 0, 0, 0))
 	var box := BoxShape3D.new()
-	box.size = Vector3(width, bounds.size.y * _sprite.pixel_size, 0.08)
+	box.size = Vector3(width + 0.08, bounds.size.y * _sprite.pixel_size + 0.08, 0.14)
 	$CollisionShape3D.shape = box
+
+func _physics_process(delta: float) -> void:
+	if GameManager.defeated: return
+	_age += delta
+	if unsuitable:
+		position.y -= 0.24 * delta
+		position.x += direction * 0.04 * delta
+		_sink_age += delta
+		if (_sink_age > 1 and not _notifier.is_on_screen()) or _sink_age > 12: queue_free()
+		return
+	var fever := GameManager.fever_left > 0 and kind == Kind.FISH
+	position.x += direction * speed * (5.5 if fever else 1.0) * delta
+	position.y = _base_y + sin(_age * 1.1 + _phase) * 0.045
+	position.z = _base_z + sin(_age * 0.6 + _phase) * 0.08
+	if angry:
+		_rage_timer -= delta
+		if _rage_timer <= 0:
+			_rage_timer = 0.3
+			for fish in get_tree().get_nodes_in_group("fish"):
+				if fish != self and is_instance_valid(fish) and global_position.distance_to(fish.global_position) < 0.85:
+					fish.make_unsuitable()
+	if _age > lifetime or absf(position.x) > 3.4: _expire()
+
+func on_target_pressed() -> void:
+	if "anginla" in species and not unsuitable and not GameManager.defeated:
+		angry = true
+		_apply_art(_texture_path("anginla enojada"))
+
+func on_click() -> void:
+	if _clicked or unsuitable or GameManager.defeated: return
+	if "anginla" in species:
+		on_target_pressed()
+		return
+	_clicked = true
+	if kind == Kind.SEAL: GameManager.start_fever()
+	elif kind == Kind.TRASH: GameManager.clean_trash()
+	else: GameManager.catch_fish(rarity, size_factor)
+	queue_free()
+
+func make_unsuitable() -> void:
+	if unsuitable or _clicked or kind != Kind.FISH: return
+	unsuitable = true
+	collision_layer = 0
+	remove_from_group("interactable")
+	var found := false
+	if species == "pez dorado millonario": noapto_texture = load("res://assets/art/pez dorado noapto.png")
+	if noapto_texture:
+		_apply_art("", noapto_texture)
+		found = true
+	else:
+		for suffix in [" noapto", "noapto", "_noapto"]:
+			var path: String = "res://assets/art/" + species + suffix + ".png"
+			if ResourceLoader.exists(path):
+				_apply_art(path)
+				found = true
+				break
+	if not found: _material.set_shader_parameter("tint", Color(0.4, 0.48, 0.48))
+	var tag := Label3D.new()
+	tag.text = "NO APTO"
+	tag.font_size = 24
+	tag.pixel_size = 0.002
+	tag.position.y = 0.25
+	add_child(tag)
+
+func collect_by_robot() -> bool:
+	if kind != Kind.TRASH or _clicked or GameManager.defeated: return false
+	_clicked = true
+	GameManager.clean_trash(false)
+	queue_free()
+	return true
+
+func _expire() -> void:
+	if _clicked: return
+	_clicked = true
+	if kind == Kind.TRASH: GameManager.ignore_trash()
+	elif kind == Kind.FISH and not angry: GameManager.let_fish_go()
+	queue_free()
+
 func get_stats_text() -> String:
-	if kind == Kind.TRASH:
-		return "%s | +5 monedas\nLimpieza %.2f s" % [species.capitalize(), capture_time]
+	if kind == Kind.SEAL: return "FOCA / POWER UP\nFiebre de peces: 10 segundos"
+	if kind == Kind.TRASH: return "%s / +5 monedas\nLimpia para proteger a los peces" % species.capitalize()
+	if "anginla" in species: return "ANGUILA / No molestar\nAl tocarla contamina peces cercanos"
 	var stats := GameManager.fish_stats(rarity, size_factor)
-	return "%s | %s\n+%d monedas / -%.1f salud\n%.2f m/s | agarre %.2f s | %.1f m" % [species.capitalize(), ["Común", "Especial", "Raro", "Legendario"][rarity], stats.reward, stats.damage, speed, capture_time, absf(position.z)]
+	return "%s | +%d monedas / -%.1f salud\n%.2f m/s | agarre %.2f s" % [species.capitalize(), stats.reward, stats.damage, speed, capture_time]

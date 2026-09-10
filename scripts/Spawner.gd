@@ -1,28 +1,25 @@
 extends Node3D
-
 @export var entity_scene: PackedScene
-@export var interval: float = 1.35
-
-var _timer: float = 0.0
-
-
+var _timer := 0.0
+var _seal_timer := 12.0
 func _process(delta: float) -> void:
-	_timer += delta
-	var wait := interval / (1.0 + float(GameManager.bait_level) * 0.15)
-	if _timer >= wait:
-		_timer = 0.0
+	if GameManager.defeated: return
+	_timer -= delta
+	_seal_timer -= delta
+	if _timer <= 0:
+		_timer = 0.23 if GameManager.fever_left > 0 else maxf(0.9, 2.2 / GameManager.difficulty())
 		_spawn()
-
-
 func _spawn() -> void:
-	if entity_scene == null:
-		return
-	var e: Area3D = entity_scene.instantiate()
-	var from_left := randf() > 0.5
-	var dir := 1.0 if from_left else -1.0
-	# Cebo aumenta aparición de peces (más tentación de sobrepesca).
-	var fish_chance := clampf(0.45 + float(GameManager.bait_level) * 0.08, 0.45, 0.8)
-	var kind: int = e.Kind.FISH if randf() < fish_chance else e.Kind.TRASH
+	if get_tree().get_nodes_in_group("entities").size() >= 35: return
+	var e = entity_scene.instantiate()
+	var dir := 1.0 if randf() > 0.5 else -1.0
+	var kind := 0
+	if GameManager.fever_left <= 0:
+		kind = 0 if randf() < 0.7 else 1
+		if _seal_timer <= 0:
+			kind = 2
+			_seal_timer = 28.0
 	e.setup(kind, dir)
-	e.position = Vector3(-2.6 if from_left else 2.6, randf_range(1.05, 1.75), [-2.5, -3.9, -5.6].pick_random() + randf_range(-0.15, 0.15))
+	if GameManager.fever_left > 0: e.species = ["pez azul", "pez naranja", "pez dorado millonario"].pick_random()
+	e.position = Vector3(-2.8 * dir, randf_range(1.2, 1.8), [-2.5, -3.6, -4.8].pick_random())
 	add_child(e)

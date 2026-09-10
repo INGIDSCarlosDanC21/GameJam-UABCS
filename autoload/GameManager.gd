@@ -1,106 +1,146 @@
 extends Node
-## Autoload: economía, Salud del Océano y post-proceso de audio global.
-## Prototipo Ocean VR — 2026-09-10
-
 signal coins_changed(value: int)
 signal ocean_health_changed(value: float)
 signal defeat_changed(is_defeat: bool)
-
+signal level_changed(value: int)
+signal depth_changed(value: int)
+signal fever_changed(active: bool)
+signal cleaner_bought(quality: int)
+signal sound_requested(event: String)
 const MAX_HEALTH := 100.0
 const BAIT_COST := 10
 const FILTER_COST := 20
-
-var coins: int = 25
-var ocean_health: float = 100.0
-## Cebo: más recompensa al pescar (sobrepesca más lucrativa).
-var bait_level: int = 0
-## Filtro: mitiga el daño de ignorar basura y bonus al limpiar.
-var filter_level: int = 0
-
+var coins := 25
+var ocean_health := 100.0
+var bait_level := 0
+var filter_level := 0
+var level := 1
+var depth := 0
+var experience := 0
+var fever_left := 0.0
+var active_cleaners := 0
+var defeated := false
 var _pitch_fx: AudioEffectPitchShift
-var _is_defeat: bool = false
-
 
 func _ready() -> void:
-	_ensure_pitch_fx()
+	var bus := AudioServer.get_bus_index("Master")
+	for i in AudioServer.get_bus_effect_count(bus):
+		if AudioServer.get_bus_effect(bus, i) is AudioEffectPitchShift:
+			_pitch_fx = AudioServer.get_bus_effect(bus, i)
+	if not _pitch_fx:
+		_pitch_fx = AudioEffectPitchShift.new()
+		AudioServer.add_bus_effect(bus, _pitch_fx)
 	_apply_audio()
-	coins_changed.emit(coins)
-	ocean_health_changed.emit(ocean_health)
 
+func _process(delta: float) -> void:
+	if fever_left > 0 and not defeated:
+		fever_left = maxf(0, fever_left - delta)
+		if fever_left == 0:
+			fever_changed.emit(false)
 
-func clean_trash() -> void:
-	_add_coins(5)
-	_set_health(ocean_health + 8.0 + float(filter_level) * 2.0)
+func difficulty() -> float:
+	return minf(2.3, 1.0 + (level - 1) * 0.05 + depth * 0.12)
 
+func progress() -> void:
+	if defeated: return
+	experience += 1
+	if experience >= 6:
+		experience = 0
+		level += 1
+		level_changed.emit(level)
+		sound_requested.emit("level")
+
+func start_fever() -> void:
+	if defeated: return
+	fever_left = 10.0
+	fever_changed.emit(true)
+	sound_requested.emit("fever")
+
+func can_descend() -> bool:
+	return not defeated and level >= (depth + 1) * 5
+
+func descend() -> bool:
+	if not can_descend(): return false
+	depth += 1
+	depth_changed.emit(depth)
+	sound_requested.emit("depth")
+	return true
+
+func clean_trash(manual: bool = true) -> void:
+	if defeated: return
+	if manual:
+		_add_coins(5)
+		progress()
+		sound_requested.emit("trash")
+	_set_health(ocean_health + (7.0 if manual else 4.0) + mini(filter_level, 3))
 
 func ignore_trash() -> void:
-	var dmg := 12.0 / (1.0 + float(filter_level))
-	_set_health(ocean_health - dmg)
-
+	if not defeated:
+		_set_health(ocean_health - 5.0 * difficulty() / (1.0 + filter_level * 0.4))
 
 func fish_stats(rarity: int, size_factor: float) -> Dictionary:
-	var multiplier: float = [1.0, 2.0, 4.0, 8.0][clampi(rarity, 0, 3)]
-	var size := clampf(size_factor, 0.75, 1.5)
-	return {"reward": maxi(1, roundi((3 + bait_level * 2) * multiplier * size)), "damage": 6.0 * multiplier * size}
+	var mult: float = [1.0, 1.5, 2.2, 3.5][clampi(rarity, 0, 3)]
+	return {"reward": maxi(1, roundi((3 + bait_level) * mult * size_factor * (2.0 if fever_left > 0 else 1.0))), "damage": 0.0 if fever_left > 0 else 1.2 * mult * size_factor}
 
 func catch_fish(rarity: int = 0, size_factor: float = 1.0) -> void:
+	if defeated: return
 	var stats := fish_stats(rarity, size_factor)
 	_add_coins(stats.reward)
 	_set_health(ocean_health - stats.damage)
+	if not defeated: progress()
+	sound_requested.emit("fish")
 
 func let_fish_go() -> void:
-	_set_health(ocean_health + 2.0)
-
+	if not defeated: _set_health(ocean_health + 0.5)
 
 func buy_bait() -> bool:
-	if coins < BAIT_COST:
-		return false
+	if defeated or coins < BAIT_COST: return false
 	coins -= BAIT_COST
 	bait_level += 1
 	coins_changed.emit(coins)
 	return true
 
+func filter_cost() -> int:
+	return FILTER_COST + filter_level * 10
 
 func buy_filter() -> bool:
-	if coins < FILTER_COST:
-		return false
-	coins -= FILTER_COST
+	if defeated or coins < filter_cost() or active_cleaners >= 3: return false
+	coins -= filter_cost()
 	filter_level += 1
+	active_cleaners += 1
+	cleaner_bought.emit(mini(filter_level, 3))
 	coins_changed.emit(coins)
 	return true
-
 
 func _add_coins(amount: int) -> void:
 	coins += amount
 	coins_changed.emit(coins)
 
-
 func _set_health(value: float) -> void:
-	ocean_health = clampf(value, 0.0, MAX_HEALTH)
+	if defeated: return
+	ocean_health = clampf(value, 0, MAX_HEALTH)
 	ocean_health_changed.emit(ocean_health)
-	var defeat := ocean_health <= 0.0
-	if defeat != _is_defeat:
-		_is_defeat = defeat
-		defeat_changed.emit(_is_defeat)
 	_apply_audio()
-
-
-func _ensure_pitch_fx() -> void:
-	var bus := AudioServer.get_bus_index("Master")
-	for i in AudioServer.get_bus_effect_count(bus):
-		var fx := AudioServer.get_bus_effect(bus, i)
-		if fx is AudioEffectPitchShift:
-			_pitch_fx = fx
-			return
-	_pitch_fx = AudioEffectPitchShift.new()
-	_pitch_fx.oversampling = 4
-	AudioServer.add_bus_effect(bus, _pitch_fx)
-
+	if ocean_health <= 0:
+		defeated = true
+		fever_left = 0
+		fever_changed.emit(false)
+		defeat_changed.emit(true)
 
 func _apply_audio() -> void:
-	var t := ocean_health / MAX_HEALTH
-	var bus := AudioServer.get_bus_index("Master")
-	var linear := lerpf(0.12, 1.0, t)
-	AudioServer.set_bus_volume_db(bus, linear_to_db(maxf(linear, 0.001)))
-	if _pitch_fx:
-		_pitch_fx.pitch_scale = lerpf(0.55, 1.0, t)
+	AudioServer.set_bus_volume_db(0, linear_to_db(lerpf(0.2, 1, ocean_health / 100.0)))
+	if _pitch_fx: _pitch_fx.pitch_scale = lerpf(0.7, 1, ocean_health / 100.0)
+
+func restart() -> void:
+	coins = 25
+	ocean_health = 100
+	bait_level = 0
+	filter_level = 0
+	level = 1
+	depth = 0
+	experience = 0
+	fever_left = 0
+	active_cleaners = 0
+	defeated = false
+	_apply_audio()
+	get_tree().reload_current_scene()
