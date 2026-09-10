@@ -1,0 +1,7 @@
+# Panorama submarino
+
+`ocean_reef_360.png` es el fondo estático predeterminado de Main.gd, asignado a PanoramaSkyMaterial. Si existe ocean_360.ogv, se utiliza el vídeo a través del SubViewport. Sin vídeo, se desactiva la actualización de ese viewport para evitar trabajo innecesario.
+
+Creado con la herramienta integrada imagegen. Prompt: Create a game-ready underwater ocean skybox texture, full spherical equirectangular panorama 360 degrees longitude by 180 degrees latitude, exact 2:1 aspect ratio preferably 4096x2048. Camera submerged 12 meters under a tropical ocean, serene beautiful stylized realistic high quality videogame environment. Luminous turquoise rippled water surface at zenith, soft diffuse sun shafts, clear teal blue open water across equatorial middle half for gameplay readability, distant coral reef formations and sandy seabed concentrated in bottom third, muted coral pinks and sea greens, deep blue atmospheric distance. No close fish, no large animals, no submarine, no cockpit, no text, no UI, no borders or watermarks. True latitude-longitude spherical mapping, horizontal left and right edges seamlessly match, pole regions smoothly converge, not a conventional perspective landscape. Restrained contrast comfortable for VR. Output only the panorama asset.
+
+Es una imagen estática de fondo: los arrecifes no tienen geometría ni paralaje. Revisión pendiente en visor: giro completo para comprobar unión horizontal y polos. La generación no garantiza una costura perfecta.

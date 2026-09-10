@@ -38,10 +38,15 @@ func ignore_trash() -> void:
 	_set_health(ocean_health - dmg)
 
 
-func catch_fish() -> void:
-	_add_coins(3 + bait_level * 2)
-	_set_health(ocean_health - 6.0)
+func fish_stats(rarity: int, size_factor: float) -> Dictionary:
+	var multiplier: float = [1.0, 2.0, 4.0, 8.0][clampi(rarity, 0, 3)]
+	var size := clampf(size_factor, 0.75, 1.5)
+	return {"reward": maxi(1, roundi((3 + bait_level * 2) * multiplier * size)), "damage": 6.0 * multiplier * size}
 
+func catch_fish(rarity: int = 0, size_factor: float = 1.0) -> void:
+	var stats := fish_stats(rarity, size_factor)
+	_add_coins(stats.reward)
+	_set_health(ocean_health - stats.damage)
 
 func let_fish_go() -> void:
 	_set_health(ocean_health + 2.0)
