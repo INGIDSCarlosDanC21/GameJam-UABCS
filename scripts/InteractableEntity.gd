@@ -55,6 +55,8 @@ func _ready() -> void:
 		add_to_group("trash")
 		if species.is_empty(): species = TRASH_ART.pick_random()
 		speed = 0.18
+		# Each discarded object keeps a distinct silhouette as it crosses the viewport.
+		_sprite.rotation.z = randf_range(-PI, PI)
 	else:
 		species = "foca"
 		speed = 0.2
