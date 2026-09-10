@@ -1,5 +1,6 @@
 extends Area3D
 enum Item { BAIT, FILTER, DESCEND, RESTART }
+@export var button_texture: Texture2D
 @export var item: Item = Item.BAIT
 @onready var _label: Label3D = $Label3D
 var _panel: StandardMaterial3D
@@ -26,6 +27,13 @@ func _ready() -> void:
 	backing.material_override = _panel
 	backing.position = _label.position + Vector3(0, 0, -0.03)
 	add_child(backing)
+	if button_texture:
+		var art := Sprite3D.new()
+		art.texture = button_texture
+		art.pixel_size = 0.64 / button_texture.get_width()
+		art.position.z = 0.002
+		add_child(art)
+		_label.position.y = -0.18
 	var border := MeshInstance3D.new()
 	var outer := BoxMesh.new()
 	outer.size = Vector3(1.28, 0.68, 0.03) if item == Item.RESTART else Vector3(0.69, 0.33, 0.03)
@@ -58,6 +66,7 @@ func _process(delta: float) -> void:
 			_refresh(GameManager.coins)
 
 func on_click() -> void:
+	if GameManager.tutorial_active: return
 	if item == Item.RESTART:
 		GameManager.restart.call_deferred()
 		return
@@ -84,4 +93,3 @@ func _refresh(coins: int) -> void:
 		_panel.albedo_color = Color("39404d")
 	if _feedback > 0:
 		_panel.albedo_color = Color("24795f") if _accepted else Color("8d3344")
-		_label.text = "COMPRA REALIZADA" if _accepted else "FALTAN MONEDAS"

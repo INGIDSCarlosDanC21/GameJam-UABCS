@@ -19,18 +19,20 @@ func _setup_xr() -> void:
 	# OpenXR is enabled at engine startup; the scene must opt into XR rendering.
 	var xr := XRServer.find_interface("OpenXR")
 	var viewport := get_viewport()
-	viewport.use_xr = false
+	# Keep an active XR swapchain intact across scene reloads.
 	if xr != null and (xr.is_initialized() or xr.initialize()):
 		$XROrigin3D/XRCamera3D.make_current()
 		viewport.use_xr = true
 		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 		print("Ocean VR: OpenXR activo; viewport enviando imagen al visor.")
 	else:
+		viewport.use_xr = false
 		print("Ocean VR: OpenXR no disponible; modo PC activo.")
 
 
 func _setup_sky() -> void:
-	var env := _world_env.environment
+	var env := _world_env.environment.duplicate(true) as Environment
+	_world_env.environment = env
 	if env == null:
 		env = Environment.new()
 		_world_env.environment = env

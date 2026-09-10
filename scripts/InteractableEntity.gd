@@ -170,7 +170,10 @@ func on_click() -> void:
 	_clicked = true
 	if kind == Kind.SEAL: GameManager.start_fever()
 	elif kind == Kind.TRASH: GameManager.clean_trash()
-	else: GameManager.catch_fish(rarity, size_factor, aura)
+	else:
+		var reward := GameManager.fish_stats(rarity, size_factor, aura)
+		GameManager.coin_requested.emit(global_position, reward.reward)
+		GameManager.catch_fish(rarity, size_factor, aura)
 	queue_free()
 
 func make_unsuitable() -> void:

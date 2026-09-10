@@ -29,7 +29,8 @@ func _ready() -> void:
 	box.radius = 0.11
 	shape.shape = box
 	add_child(shape)
-	_offset = Vector3(randf_range(-0.45,0.45),randf_range(-0.22,0.25),-0.9)
+	var spread := maxf(0.10, 0.32 - GameManager.depth * 0.045)
+	_offset = Vector3(randf_range(-spread,spread),randf_range(-spread * 0.65,spread * 0.65),-0.9)
 	global_position = _camera.to_global(_offset)
 	if snail: GameManager.sound_requested.emit("snail")
 func _set_art(name_text: String) -> void:

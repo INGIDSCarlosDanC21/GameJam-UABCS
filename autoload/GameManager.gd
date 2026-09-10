@@ -8,6 +8,7 @@ signal fever_changed(active: bool)
 signal cleaner_bought(quality: int)
 signal sound_requested(event: String)
 signal bubbles_requested(at: Vector3)
+signal coin_requested(at: Vector3, amount: int)
 const MAX_HEALTH := 100.0
 const BAIT_COST := 10
 const FILTER_COST := 20
@@ -22,6 +23,8 @@ var fever_left := 0.0
 var active_cleaners := 0
 var defeated := false
 var stun_left := 0.0
+var tutorial_active := true
+var tutorial_completed := false
 var _pitch_fx: AudioEffectPitchShift
 
 func _ready() -> void:
@@ -52,6 +55,7 @@ func progress() -> void:
 		level += 1
 		level_changed.emit(level)
 		sound_requested.emit("level")
+		if can_descend(): descend()
 
 func start_fever() -> void:
 	if defeated: return
@@ -147,4 +151,5 @@ func restart() -> void:
 	defeated = false
 	stun_left = 0.0
 	_apply_audio()
+	tutorial_active = not tutorial_completed
 	get_tree().reload_current_scene()

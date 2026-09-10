@@ -19,6 +19,8 @@ func _ready() -> void:
 	GameManager.bubbles_requested.connect(_bubbles)
 	GameManager.defeat_changed.connect(_defeat)
 	GameManager.fever_changed.connect(_fever)
+	GameManager.coin_requested.connect(_coin_fly)
+	GameManager.depth_changed.connect(_depth_announcement)
 	var camera := get_parent().get_node("XROrigin3D/XRCamera3D")
 	_screen = MeshInstance3D.new()
 	var quad := QuadMesh.new()
@@ -31,6 +33,8 @@ func _ready() -> void:
 	_screen.material_override = _screen_mat
 	camera.add_child.call_deferred(_screen)
 	_descend = _button(2)
+	_descend.hide()
+	_descend.collision_layer = 0
 	_restart = _button(3)
 	_restart.hide()
 	_restart.collision_layer = 0
@@ -59,6 +63,10 @@ func _ready() -> void:
 			_lights.append(node)
 	for node in get_parent().get_children():
 		if node is Light3D and not node in _lights: _lights.append(node)
+	if GameManager.tutorial_active:
+		var tutorial := Node3D.new()
+		tutorial.set_script(preload("res://scripts/TutorialOverlay.gd"))
+		get_parent().get_node("XROrigin3D/XRCamera3D").add_child(tutorial)
 
 func _button(type: int) -> Area3D:
 	var button := Area3D.new()
@@ -79,12 +87,12 @@ func _process(delta: float) -> void:
 	_screen_mat.set_shader_parameter("fever", 1.0 if GameManager.fever_left > 0 else 0.0)
 	_screen_mat.set_shader_parameter("stun", 1.0 if GameManager.stun_left > 0 else 0.0)
 	_hostile_timer -= delta
-	if _hostile_timer <= 0 and not GameManager.defeated:
-		_hostile_timer = 18.0
-		if get_tree().get_nodes_in_group("hostiles").size() < 3:
+	if _hostile_timer <= 0 and not GameManager.defeated and not GameManager.tutorial_active:
+		_hostile_timer = maxf(3.5, 16.0 - GameManager.depth * 2.2)
+		if get_tree().get_nodes_in_group("hostiles").size() < mini(10, 2 + GameManager.depth * 2):
 			var hostile := Area3D.new()
 			hostile.set_script(preload("res://scripts/Hostile.gd"))
-			hostile.snail = randf() < 0.5
+			hostile.snail = randf() < minf(0.92, 0.42 + GameManager.depth * 0.12)
 			add_child(hostile)
 	var alive := not GameManager.defeated
 	var fever := GameManager.fever_left > 0 and alive
@@ -107,8 +115,6 @@ func _process(delta: float) -> void:
 	if alarm_on and _alarm_clock <= 0:
 		_alarm_clock = 1.2
 		GameManager.sound_requested.emit("alarm")
-	_descend.visible = GameManager.can_descend()
-	_descend.collision_layer = 2 if _descend.visible else 0
 	if alive:
 		_status.text = "NIVEL %d  /  %d MONEDAS\nOCÉANO %d%%  |  PROFUNDIDAD %d\n%s" % [GameManager.level, GameManager.coins, int(GameManager.ocean_health), GameManager.depth, ("¡FIEBRE DE PECES! x2  %.1f s" % GameManager.fever_left) if fever else ("Progreso %d/6" % GameManager.experience)]
 	_check -= delta
@@ -135,6 +141,25 @@ func _buy_cleaner(quality: int) -> void:
 	robot.quality = quality
 	robot.position = Vector3(-1.7, 1.2, -3.5)
 	add_child(robot)
+
+func _coin_fly(at: Vector3, amount: int) -> void:
+	var coin := Node3D.new()
+	coin.set_script(preload("res://scripts/CoinFly.gd"))
+	coin.amount = amount
+	coin.target = _status.global_position
+	add_child(coin)
+	coin.global_position = at
+
+func _depth_announcement(value: int) -> void:
+	if not is_instance_valid(_descend): return
+	_descend.show()
+	_descend.collision_layer = 0
+	_descend.get_node("Label3D").text = "PROFUNDIDAD %d\nDESCENSO AUTOMÁTICO" % value
+	_descend._panel.albedo_color = Color("8d1924")
+	var timer := get_tree().create_timer(2.6)
+	timer.timeout.connect(func():
+		if is_instance_valid(_descend): _descend.hide()
+	)
 
 func _fever(active: bool) -> void:
 	if active:
