@@ -9,6 +9,7 @@ var _hover := false
 var _feedback := 0.0
 var _accepted := false
 var _art: Sprite3D
+var _visual: MeshInstance3D
 
 func _ready() -> void:
 	position = Vector3(-0.22 if item == Item.BAIT else 0.22, 0.82, -1.45)
@@ -29,6 +30,7 @@ func _ready() -> void:
 	box.size = Vector3(1.25, 0.65, 0.035) if item == Item.RESTART else Vector3(0.34, 0.36, 0.035)
 	backing.mesh = box
 	backing.material_override = _panel
+	_visual = backing
 	backing.position = _label.position + Vector3(0, 0, -0.03)
 	add_child(backing)
 	if button_texture or not filter_icons.is_empty():
@@ -50,6 +52,9 @@ func _ready() -> void:
 	_label.pixel_size = 0.0012
 	_label.outline_size = 3
 	_label.modulate = Color("f2f8ff")
+	if item == Item.RESTART:
+		_label.font_size = 26
+		_label.pixel_size = 0.0012
 	var shape := BoxShape3D.new()
 	shape.size = Vector3(1.25, 0.65, 0.07) if item == Item.RESTART else Vector3(0.34, 0.36, 0.07)
 	$CollisionShape3D.shape = shape
@@ -63,6 +68,7 @@ func set_hovered(value: bool) -> void:
 	_refresh(GameManager.coins)
 
 func _process(delta: float) -> void:
+	_visual.position.z = lerpf(_visual.position.z, -0.019 if _hover else -0.03, 1.0 - exp(-14.0 * delta))
 	if _feedback > 0:
 		_feedback -= delta
 		if _feedback <= 0:
@@ -82,12 +88,13 @@ func on_click() -> void:
 
 func _refresh(coins: int) -> void:
 	if item >= Item.DESCEND:
-		_label.text = "DESCENDER\nCada 5 niveles" if item == Item.DESCEND else "OCÉANO AGOTADO\nREINICIAR PARTIDA"
+		if _label.text.is_empty():
+			_label.text = "DESCENDER\nCada 5 niveles" if item == Item.DESCEND else "OCÉANO AGOTADO\nREINICIAR PARTIDA"
 		_panel.albedo_color = Color("286d82") if _hover else Color("102d43")
 		return
 	var price := GameManager.BAIT_COST if item == Item.BAIT else GameManager.filter_cost()
-	var title := "CEBO" if item == Item.BAIT else "FILTRO"
-	var level := GameManager.bait_level if item == Item.BAIT else GameManager.filter_level
+	var title := "CEBO" if item == Item.BAIT else "FILTROBOT"
+	var level := GameManager.bait_level if item == Item.BAIT else GameManager.cleaner_quality()
 	var description := "+ Peces y recompensa" if item == Item.BAIT else "Filtro + robot (60 s)"
 	_label.text = "%s  /  NIVEL %d\n%s\n%d MONEDAS" % [title, level, description, price]
 	if is_instance_valid(_art):
@@ -95,8 +102,12 @@ func _refresh(coins: int) -> void:
 		if item == Item.FILTER and not filter_icons.is_empty():
 			icon = filter_icons[mini(GameManager.cleaner_quality() - 1, filter_icons.size() - 1)]
 		if icon:
-			_art.texture = icon
-			_art.pixel_size = 0.16 / icon.get_width()
+			if _art.texture != icon:
+				_art.texture = icon
+				var bounds := icon.get_image().get_used_rect()
+				_art.region_enabled = true
+				_art.region_rect = Rect2(bounds)
+				_art.pixel_size = 0.16 / maxi(1, maxi(bounds.size.x, bounds.size.y))
 	_panel.albedo_color = Color("14576c") if _hover else Color("102d43")
 	if coins < price:
 		_panel.albedo_color = Color("39404d")

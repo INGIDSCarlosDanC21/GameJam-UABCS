@@ -5,6 +5,7 @@ var _check := 0.0
 var _alarm_clock := 0.0
 var _env: Environment
 var _lights: Array[Light3D] = []
+var _light_defaults: Dictionary = {}
 var _alarm_light: OmniLight3D
 var _alarm_mat: StandardMaterial3D
 var _descend: Area3D
@@ -42,6 +43,17 @@ func _ready() -> void:
 	_status = get_parent().get_node("Cabin/StatusLabel")
 	_status.pixel_size = 0.0013
 	_status.position = Vector3(0, 2.35, -1.6)
+	_status.font_size = 26
+	_status.outline_size = 2
+	var instruments := Node3D.new()
+	instruments.set_script(preload("res://scripts/OceanInstruments.gd"))
+	_status.add_child(instruments)
+	var motes := MultiMeshInstance3D.new()
+	motes.set_script(preload("res://scripts/OceanMotes.gd"))
+	add_child(motes)
+	var frame := Node3D.new()
+	frame.set_script(preload("res://scripts/CabinFrame.gd"))
+	add_child(frame)
 	var lamp := MeshInstance3D.new()
 	var bulb := SphereMesh.new()
 	bulb.radius = 0.07
@@ -64,6 +76,8 @@ func _ready() -> void:
 			_lights.append(node)
 	for node in get_parent().get_children():
 		if node is Light3D and not node in _lights: _lights.append(node)
+	for light in _lights:
+		_light_defaults[light] = [light.light_energy, light.light_color]
 
 func _button(type: int) -> Area3D:
 	var button := Area3D.new()
@@ -103,8 +117,9 @@ func _process(delta: float) -> void:
 		_env.ambient_light_energy = 0.45 * illumination
 	for light in _lights:
 		if not is_instance_valid(light): continue
-		light.light_energy = (1.4 if fever else 0.9) * illumination
-		light.light_color = Color("ffd064") if fever else Color("b9d9e0")
+		var original: Array = _light_defaults[light]
+		light.light_energy = lerpf(light.light_energy, float(original[0]) * (1.2 if fever else 1.0) * illumination, 1.0 - exp(-3.0 * delta))
+		light.light_color = light.light_color.lerp(Color("ffd064") if fever else original[1], 1.0 - exp(-3.0 * delta))
 	var alarm_on := alive and health < 0.3
 	var flash := (0.5 + 0.5 * sin(_pulse * TAU)) if alarm_on else 0.0
 	_alarm_mat.albedo_color = Color(0.2 + flash * 0.8, 0.01, 0.01)
@@ -114,7 +129,7 @@ func _process(delta: float) -> void:
 		_alarm_clock = 1.2
 		GameManager.sound_requested.emit("alarm")
 	if alive:
-		var event_text := "TIEMPO LENTO  %.1f s" % GameManager.slow_time_left if GameManager.slow_time_left > 0 else ("¡FIEBRE DE PECES! x2  %.1f s" % GameManager.fever_left if fever else "Progreso %d/6")
+		var event_text := "TIEMPO LENTO  %.1f s" % GameManager.slow_time_left if GameManager.slow_time_left > 0 else ("¡FIEBRE DE PECES! x2  %.1f s" % GameManager.fever_left if fever else "Progreso %d/6" % GameManager.experience)
 		_status.text = "NIVEL %d  /  %d MONEDAS\nOCÉANO %d%%  |  PROFUNDIDAD %d\n%s" % [GameManager.level, GameManager.coins, int(GameManager.ocean_health), GameManager.depth, event_text]
 	_check -= delta
 	if alive and _check <= 0:
@@ -173,6 +188,7 @@ func _fever(active: bool) -> void:
 
 func _defeat(value: bool) -> void:
 	if not value: return
+	_descend.hide()
 	GameManager.sound_requested.emit("death")
 	for entity in get_tree().get_nodes_in_group("entities"): entity.queue_free()
 	for cleaner in get_tree().get_nodes_in_group("cleaners"): cleaner.queue_free()
@@ -185,6 +201,7 @@ func _defeat(value: bool) -> void:
 	get_parent().get_node("XROrigin3D/XRCamera3D/Vignette").hide()
 	_restart.show()
 	_restart.collision_layer = 2
+	_restart.get_node("Label3D").text = "FIN DE EXPEDICIÓN\n%d residuos retirados · %d peces capturados\nLa limpieza permite conservar el océano.\nREINICIAR" % [GameManager.waste_removed, GameManager.fish_caught]
 
 func explode_at(at: Vector3) -> void:
 	GameManager.sound_requested.emit("explosion")

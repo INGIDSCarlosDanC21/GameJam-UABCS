@@ -20,10 +20,14 @@ func run() -> void:
 	root.add_child(main)
 	current_scene = main
 	await create_timer(0.5).timeout
+	if DisplayServer.get_name() != "headless":
+		await RenderingServer.frame_post_draw
+		root.get_texture().get_image().save_png("res://.godot/cabin-preview.png")
 	main.get_node("Spawner").set_process(false)
 	for e in get_nodes_in_group("entities"): e.queue_free()
 	await process_frame
 	var gm = root.get_node("GameManager")
+	check(main.get_node("Cabin/ShopFilter").get_parent() == main.get_node("Cabin"), "shop remains fixed in cabin")
 	var session = main.get_node("OceanSession")
 	check(gm.fish_stats(0,1,3).reward > gm.fish_stats(0,1,0).reward, "gold aura raises reward")
 	seed(70)
@@ -49,13 +53,18 @@ func run() -> void:
 	await process_frame
 	check(gm.fish_stats(0, 1.0).damage == 1.2, "easy starting damage")
 	for i in range(24): gm.progress()
-	check(gm.level == 5 and gm.can_descend(), "level five unlocks depth")
-	check(gm.descend() and gm.depth == 1 and not gm.descend(), "one descent per milestone")
+	check(gm.level == 5 and gm.depth == 1, "level five automatically descends")
+	check(not gm.descend() and gm.cleaner_quality() == 2, "milestone cannot repeat and robot evolves")
 	var fish = entity(main, 0, "pez azul", Vector3(0,1.5,-3.5))
 	var trash = entity(main, 1, "lata", fish.position)
 	session._contamination()
 	check(fish.unsuitable and fish.collision_layer == 0, "trash contact disables fish")
 	check(fish.get_node("Sprite3D").texture.resource_path.ends_with("pez azul noapto.png"), "matching unsuitable sprite")
+	var oracle = entity(main, 0, "pez oracles", Vector3(1, 1.5, -3.5))
+	oracle.on_click()
+	check(gm.slow_time_left == 5.0, "Oracle starts five second slow time")
+	gm._process(5.1)
+	check(gm.world_time_scale() == 1.0, "Oracle restores world speed")
 	trash.queue_free()
 	fish.queue_free()
 	await process_frame
@@ -113,9 +122,11 @@ func run() -> void:
 	gm.clean_trash()
 	check(gm.defeated and gm.ocean_health == 0 and session._restart.visible, "terminal defeat and restart menu")
 	check(not main.get_node("Cabin/ShopBait").visible, "gameplay shop replaced")
+	check(session._restart.get_node("Label3D").text.contains("residuos retirados"), "educational debrief shows expedition impact")
 	await create_timer(2).timeout
-	await RenderingServer.frame_post_draw
-	root.get_texture().get_image().save_png("res://.godot/defeat-preview.png")
+	if DisplayServer.get_name() != "headless":
+		await RenderingServer.frame_post_draw
+		root.get_texture().get_image().save_png("res://.godot/defeat-preview.png")
 	gm.restart()
 	await create_timer(1).timeout
 	check(is_instance_valid(current_scene) and current_scene != main and gm.level == 1 and gm.depth == 0 and gm.ocean_health == 100 and not gm.defeated, "restart resets run")

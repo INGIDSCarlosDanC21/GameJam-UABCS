@@ -24,6 +24,8 @@ var active_cleaners := 0
 var defeated := false
 var stun_left := 0.0
 var slow_time_left := 0.0
+var waste_removed := 0
+var fish_caught := 0
 var _pitch_fx: AudioEffectPitchShift
 
 func _ready() -> void:
@@ -86,6 +88,7 @@ func descend() -> bool:
 
 func clean_trash(manual: bool = true) -> void:
 	if defeated: return
+	waste_removed += 1
 	if manual:
 		_add_coins(5)
 		progress()
@@ -102,6 +105,7 @@ func fish_stats(rarity: int, size_factor: float, aura: int = 0) -> Dictionary:
 
 func catch_fish(rarity: int = 0, size_factor: float = 1.0, aura: int = 0) -> void:
 	if defeated: return
+	fish_caught += 1
 	var stats := fish_stats(rarity, size_factor, aura)
 	_add_coins(stats.reward)
 	_set_health(ocean_health - stats.damage)
@@ -150,6 +154,8 @@ func _apply_audio() -> void:
 	if _pitch_fx: _pitch_fx.pitch_scale = lerpf(0.7, 1, ocean_health / 100.0)
 
 func restart() -> void:
+	waste_removed = 0
+	fish_caught = 0
 	coins = 25
 	ocean_health = 100
 	bait_level = 0
