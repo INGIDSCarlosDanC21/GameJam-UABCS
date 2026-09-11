@@ -31,6 +31,8 @@ func _ready() -> void:
 	_screen.position.z = -0.11
 	_screen_mat = ShaderMaterial.new()
 	_screen_mat.shader = preload("res://shaders/event_screen.gdshader")
+	if OS.has_feature("android"):
+		_screen_mat.shader = preload("res://shaders/quest_event_screen.gdshader")
 	_screen_mat.render_priority = -100
 	_screen.material_override = _screen_mat
 	camera.add_child.call_deferred(_screen)

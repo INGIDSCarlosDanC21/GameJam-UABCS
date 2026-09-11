@@ -12,7 +12,7 @@ func _ready() -> void:
 	multimesh = MultiMesh.new()
 	multimesh.transform_format = MultiMesh.TRANSFORM_3D
 	multimesh.mesh = mesh
-	multimesh.instance_count = 90
+	multimesh.instance_count = 40 if OS.has_feature("android") else 90
 	custom_aabb = AABB(Vector3(-5, -2, -9), Vector3(10, 8, 8))
 	cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var random := RandomNumberGenerator.new()

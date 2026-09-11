@@ -37,7 +37,8 @@ func _style(node: Node) -> void:
 				var ink := ShaderMaterial.new()
 				ink.shader = OUTLINE
 				ink.set_shader_parameter("thickness", 0.006)
-				mat.next_pass = ink
+				if not OS.has_feature("android"):
+					mat.next_pass = ink
 				node.set_surface_override_material(i, mat)
 	for child in node.get_children():
 		_style(child)

@@ -37,5 +37,12 @@ window/size/viewport_height=1080
 
 [xr]
 
+
 openxr/enabled=true
 shaders/enabled=true
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.windows="forward_plus"
+textures/vram_compression/import_etc2_astc=true
