@@ -41,14 +41,20 @@ func _setup_xr() -> void:
 func _setup_sky() -> void:
 	var env := _world_env.environment.duplicate(true) as Environment
 	_world_env.environment = env
-	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color("062737")
+	env.background_mode = Environment.BG_SKY
+	var sky_material := ShaderMaterial.new()
+	sky_material.shader = preload("res://shaders/underwater_sky.gdshader")
+	env.sky = Sky.new()
+	env.sky.sky_material = sky_material
+	env.sky.process_mode = Sky.PROCESS_MODE_QUALITY
+	env.sky.radiance_size = Sky.RADIANCE_SIZE_32
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color("66a6b3")
 	env.ambient_light_energy = 0.6
 	env.fog_enabled = true
 	env.fog_light_color = Color("0c5267")
 	env.fog_density = 0.018
+	env.fog_sky_affect = 0.65
 	_video.stop()
 	_video.hide()
 	_sky_vp.render_target_update_mode = SubViewport.UPDATE_DISABLED

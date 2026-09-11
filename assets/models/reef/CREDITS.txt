@@ -1,0 +1,35 @@
+MODELOS 3D DEL ARRECIFE — Ocean VR
+
+Animated Fish Pack — Quaternius
+Fish1, Fish2, Fish3, Dolphin y Manta ray.
+https://quaternius.com/packs/animatedfish.html
+https://opengameart.org/content/animated-fish
+CC0 1.0: https://creativecommons.org/publicdomain/zero/1.0/
+Originales FBX con animación Swim; adaptaciones en el juego: escala, pivote,
+velocidad de animación, fase y trayectorias continuas. Archivo original:
+https://opengameart.org/sites/default/files/Animated%20Fish%20Pack%20by%20%40Quaternius.zip
+
+Coral Reef Set3 — MiniPoly
+https://poly.pizza/m/UyswwdHFiL
+Coral Reef Set2 — MiniPoly
+https://poly.pizza/m/HdrPoAyuCJ
+Coral Reef Set6 — MiniPoly
+https://poly.pizza/m/hOBkCGKjlo
+Los tres: CC BY 3.0, https://creativecommons.org/licenses/by/3.0/
+Originales GLB. Adaptaciones en el juego: extracción de mallas para instancias,
+escala, posición, paleta de color y material animado. Sin modificar el GLB.
+
+Kelp — Poly by Google
+https://poly.pizza/m/4cFllH6Iazk
+CC BY 3.0: https://creativecommons.org/licenses/by/3.0/
+Original GLB. Adaptaciones: escala, material, variaciones y balanceo por shader.
+
+Orange Coral — Device Lab
+https://poly.pizza/m/3HEc6LvqCJd
+CC BY 3.0: https://creativecommons.org/licenses/by/3.0/
+Original GLB. Adaptaciones: escala, material, paleta y balanceo por shader.
+
+Descargados el 11 de septiembre de 2026. No se afirma respaldo de sus autores.
+Copias de licencias: licenses/Quaternius.txt y licenses/CC-BY-3.0.txt.
+Estos créditos se refieren a los modelos nuevos del fondo; no sustituyen las
+licencias de los demás recursos del proyecto.

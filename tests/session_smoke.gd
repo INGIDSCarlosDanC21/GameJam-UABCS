@@ -53,8 +53,8 @@ func run() -> void:
 	check(shop._hover, "hover persists while the other pointer remains")
 	right._set_hover(shop, false)
 	var ocean = main.get_node("OceanWorld")
-	check(ocean.has_node("ReefRocks") and ocean.has_node("KelpGarden") and ocean.has_node("CoralGarden"), "ocean has batched reef geometry")
-	check(ocean.get_child_count() == 5, "dense reef uses five geometry nodes")
+	check(ocean.has_node("ReefRocks") and ocean.has_node("ReefLife/Kelp0"), "ocean has batched reef geometry")
+	check(ocean.has_node("ReefLife"), "downloaded reef flora and fauna are present")
 	right._held = true
 	right._progress = 0.5
 	right._grip_ratio = 0.5

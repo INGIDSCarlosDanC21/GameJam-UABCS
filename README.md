@@ -1,5 +1,8 @@
 # Ocean VR — guía de arte 2D (Godot 4.x)
 
+**Fondo 3D actualizado:** [guía del arrecife, animaciones y ajustes para Quest](FONDO_MARINO_3D.md).
+[Créditos de los modelos descargados](assets/models/reef/CREDITS.txt), también disponibles al elegir modo de juego.
+
 **Fecha del prototipo: 10 de septiembre de 2026.**  
 Prototipo: cabina estática, puntero láser VR, peces/basura flotantes y **Salud del Océano**.  
 Abrir la carpeta del proyecto en **Godot 4.3+** (probado en 4.7) con OpenXR. Escena principal: `scenes/Main.tscn`.  
