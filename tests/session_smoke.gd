@@ -130,5 +130,33 @@ func run() -> void:
 	gm.restart()
 	await create_timer(1).timeout
 	check(is_instance_valid(current_scene) and current_scene != main and gm.level == 1 and gm.depth == 0 and gm.ocean_health == 100 and not gm.defeated, "restart resets run")
+	current_scene.get_node("Spawner").set_process(false)
+	check(gm.robots_deployed == 0 and not gm.expedition_finished and gm.expedition_left > 298, "restart resets expedition")
+	gm.waste_removed = gm.WASTE_GOAL
+	gm.advance_expedition(31)
+	check(not gm.expedition_finished and gm.conservation_time == 0, "cleanup alone cannot complete mission")
+	gm.coins = 100
+	gm.buy_filter()
+	gm.advance_expedition(15)
+	check(gm.conservation_time == 15, "healthy reef starts conservation objective")
+	gm._set_health(69)
+	gm.advance_expedition(1)
+	check(gm.conservation_time == 0, "low health breaks conservation streak")
+	gm._set_health(80)
+	gm.advance_expedition(30)
+	check(gm.expedition_finished and gm.expedition_success and not gm.defeated, "all three objectives win the expedition")
+	coins = gm.coins
+	gm.catch_fish()
+	gm.clean_trash()
+	check(gm.coins == coins and not gm.buy_filter(), "completed expedition blocks economy changes")
+	check(current_scene.get_node("OceanSession")._restart.get_node("Label3D").text.contains("MISIÓN CUMPLIDA"), "victory has a positive debrief")
+	if DisplayServer.get_name() != "headless":
+		await create_timer(0.5).timeout
+		await RenderingServer.frame_post_draw
+		root.get_texture().get_image().save_png("res://.godot/mission-preview.png")
+	gm.restart()
+	await create_timer(0.5).timeout
+	gm.advance_expedition(300)
+	check(gm.expedition_finished and not gm.expedition_success and not gm.defeated, "time limit ends incomplete mission without ecological defeat")
 	print("FAILURES: ", failures)
 	quit(failures)

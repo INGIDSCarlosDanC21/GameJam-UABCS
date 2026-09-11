@@ -11,6 +11,7 @@ var _alarm_mat: StandardMaterial3D
 var _descend: Area3D
 var _restart: Area3D
 var _status: Label3D
+var _mission: Label3D
 var _pulse := 0.0
 var _hostile_timer := 18.0
 var _screen_mat: ShaderMaterial
@@ -19,6 +20,7 @@ func _ready() -> void:
 	GameManager.cleaner_bought.connect(_buy_cleaner)
 	GameManager.bubbles_requested.connect(_bubbles)
 	GameManager.defeat_changed.connect(_defeat)
+	GameManager.expedition_ended.connect(_expedition_end)
 	GameManager.fever_changed.connect(_fever)
 	GameManager.coin_requested.connect(_coin_fly)
 	GameManager.depth_changed.connect(_depth_announcement)
@@ -50,6 +52,16 @@ func _ready() -> void:
 	var instruments := Node3D.new()
 	instruments.set_script(preload("res://scripts/OceanInstruments.gd"))
 	_status.add_child(instruments)
+	_mission = Label3D.new()
+	_mission.font_size = 23
+	_mission.pixel_size = 0.0012
+	_mission.modulate = Color("a9f1d8")
+	_mission.outline_size = 4
+	_mission.position = Vector3(0, 2.12, -1.65)
+	add_child(_mission)
+	var reef := Node3D.new()
+	reef.set_script(preload("res://scripts/RestorationReef.gd"))
+	add_child(reef)
 	var motes := MultiMeshInstance3D.new()
 	motes.set_script(preload("res://scripts/OceanMotes.gd"))
 	add_child(motes)
@@ -101,14 +113,14 @@ func _process(delta: float) -> void:
 	_screen_mat.set_shader_parameter("fever", 1.0 if GameManager.fever_left > 0 else 0.0)
 	_screen_mat.set_shader_parameter("stun", 1.0 if GameManager.stun_left > 0 else 0.0)
 	_hostile_timer -= world_delta
-	if _hostile_timer <= 0 and not GameManager.defeated:
+	if _hostile_timer <= 0 and not GameManager.is_run_over():
 		_hostile_timer = maxf(3.5, 16.0 - GameManager.depth * 2.2)
 		if get_tree().get_nodes_in_group("hostiles").size() < mini(10, 2 + GameManager.depth * 2):
 			var hostile := Area3D.new()
 			hostile.set_script(preload("res://scripts/Hostile.gd"))
 			hostile.snail = randf() < minf(0.92, 0.42 + GameManager.depth * 0.12)
 			add_child(hostile)
-	var alive := not GameManager.defeated
+	var alive := not GameManager.is_run_over()
 	var fever := GameManager.fever_left > 0 and alive
 	var health := GameManager.ocean_health / 100.0
 	var illumination := maxf(0.018, health * health) * pow(0.75, GameManager.depth)
@@ -131,6 +143,8 @@ func _process(delta: float) -> void:
 		_alarm_clock = 1.2
 		GameManager.sound_requested.emit("alarm")
 	if alive:
+		var seconds := ceili(GameManager.expedition_left)
+		_mission.text = "%02d:%02d  ·  %s" % [seconds / 60, seconds % 60, GameManager.mission_text()]
 		var event_text := "TIEMPO LENTO  %.1f s" % GameManager.slow_time_left if GameManager.slow_time_left > 0 else ("¡FIEBRE DE PECES! x2  %.1f s" % GameManager.fever_left if fever else "Progreso %d/6" % GameManager.experience)
 		_status.text = "NIVEL %d  /  %d MONEDAS\nOCÉANO %d%%  |  PROFUNDIDAD %d\n%s" % [GameManager.level, GameManager.coins, int(GameManager.ocean_health), GameManager.depth, event_text]
 	_check -= delta
@@ -191,7 +205,8 @@ func _fever(active: bool) -> void:
 func _defeat(value: bool) -> void:
 	if not value: return
 	_descend.hide()
-	GameManager.sound_requested.emit("death")
+	_mission.hide()
+	GameManager.sound_requested.emit("success" if GameManager.expedition_success else "death")
 	for entity in get_tree().get_nodes_in_group("entities"): entity.queue_free()
 	for cleaner in get_tree().get_nodes_in_group("cleaners"): cleaner.queue_free()
 	GameManager.active_cleaners = 0
@@ -204,6 +219,15 @@ func _defeat(value: bool) -> void:
 	_restart.show()
 	_restart.collision_layer = 2
 	_restart.get_node("Label3D").text = "FIN DE EXPEDICIÓN\n%d residuos retirados · %d peces capturados\nLa limpieza permite conservar el océano.\nREINICIAR" % [GameManager.waste_removed, GameManager.fish_caught]
+
+func _expedition_end(success: bool) -> void:
+	_defeat(true)
+	_restart._panel.albedo_color = Color("17594e") if success else Color("293b4d")
+	_restart.get_node("Label3D").text = "%s\n%d residuos retirados · %d Filtrobots desplegados\nSalud final: %d%% · %d peces capturados\n%s\nVOLVER A EXPLORAR" % [
+		"MISIÓN CUMPLIDA" if success else "TIEMPO DE EXPEDICIÓN AGOTADO",
+		GameManager.waste_removed, GameManager.robots_deployed,
+		int(GameManager.ocean_health), GameManager.fish_caught,
+		"Conservar también es dejar peces en el océano." if success else "Prueba a invertir en limpieza y reducir capturas."]
 
 func explode_at(at: Vector3) -> void:
 	GameManager.sound_requested.emit("explosion")

@@ -115,7 +115,7 @@ func _apply_art(path: String, replacement: Texture2D = null) -> void:
 	$CollisionShape3D.shape = box
 
 func _physics_process(delta: float) -> void:
-	if GameManager.defeated: return
+	if GameManager.is_run_over(): return
 	delta *= GameManager.world_time_scale()
 	_age += delta
 	if _exit_age >= 0:
@@ -160,13 +160,13 @@ func _physics_process(delta: float) -> void:
 			_exit_start = position
 
 func on_target_pressed() -> void:
-	if "anginla" in species and not unsuitable and not GameManager.defeated:
+	if "anginla" in species and not unsuitable and not GameManager.is_run_over():
 		angry = true
 		if _local_light: _local_light.show()
 		_apply_art(_texture_path("anginla enojada"))
 
 func on_click() -> void:
-	if _clicked or unsuitable or GameManager.defeated: return
+	if _clicked or unsuitable or GameManager.is_run_over(): return
 	if "anginla" in species:
 		on_target_pressed()
 		return
@@ -213,7 +213,7 @@ func make_unsuitable() -> void:
 	add_child(tag)
 
 func collect_by_robot() -> bool:
-	if kind != Kind.TRASH or _clicked or GameManager.defeated: return false
+	if kind != Kind.TRASH or _clicked or GameManager.is_run_over(): return false
 	_clicked = true
 	GameManager.clean_trash(false)
 	queue_free()

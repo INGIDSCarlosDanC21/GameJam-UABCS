@@ -139,7 +139,7 @@ func _physics_process(delta: float) -> void:
 	if _target.has_method("get_stats_text"):
 		_info.text = _target.get_stats_text()
 	else:
-		_info.text = "Mantén para reiniciar" if GameManager.defeated else "Mantén para activar"
+		_info.text = "Mantén para reiniciar" if GameManager.is_run_over() else "Mantén para activar"
 	if not _held or not aligned or _cooldown > 0:
 		_progress = 0.0
 		return

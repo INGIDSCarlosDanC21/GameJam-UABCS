@@ -8,6 +8,12 @@ La versión entregada en la Game Jam está en el commit `0867a63`. Los ejecutabl
 
 ## Guion breve
 
+La expedición tiene un límite de cinco minutos. Sus objetivos son retirar 15 residuos (manualmente o con robots), desplegar al menos un Filtrobot y después mantener salud de 70% o más durante 30 segundos consecutivos. Bajar de ese umbral reinicia la racha. Es posible ganar antes del límite; agotarlo muestra un cierre de misión incompleta. Llegar a cero de salud conserva la derrota por contaminación.
+
+Un pequeño arrecife geométrico recupera color y altura conforme aumenta la limpieza y se conserva la salud. Es una representación simbólica: no reproduce los tiempos reales de recuperación coralina.
+
+La revisión de misión pasó 39 comprobaciones en Godot desde el editor, incluida victoria, límite de tiempo y reinicio. No se exportaron APK ni ejecutables para esta revisión, por petición del equipo.
+
 1. Observar la salud inicial y retirar residuos: cada objeto retirado cuenta en el resumen.
 2. Capturar peces y comparar el ingreso económico con el cambio de salud.
 3. Comprar un Filtrobot y observar cómo automatiza parte de la limpieza.

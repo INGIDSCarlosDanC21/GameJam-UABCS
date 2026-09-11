@@ -40,7 +40,7 @@ func _set_art(name_text: String) -> void:
 	_sprite.region_rect = Rect2(rect)
 	_sprite.pixel_size = (0.14 if snail else 0.22) / maxi(1,rect.size.x)
 func _physics_process(delta: float) -> void:
-	if GameManager.defeated:
+	if GameManager.is_run_over():
 		queue_free()
 		return
 	delta *= GameManager.world_time_scale()

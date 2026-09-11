@@ -23,7 +23,7 @@ func set_quality(value: int) -> void:
 	_sprite.pixel_size = 0.42 / maxi(bounds.size.x, 1)
 	_sprite.modulate = [Color.WHITE, Color("96dcff"), Color("ffdc80")][quality - 1]
 func _physics_process(delta: float) -> void:
-	if GameManager.defeated: return
+	if GameManager.is_run_over(): return
 	delta *= GameManager.world_time_scale()
 	age += delta
 	_bubble_time -= delta
