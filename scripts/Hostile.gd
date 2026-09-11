@@ -65,7 +65,7 @@ func _physics_process(delta: float) -> void:
 func on_target_pressed() -> void:
 	if not snail: on_click()
 func on_click() -> void:
-	if leaving or triggered: return
+	if leaving or triggered or grabbed: return
 	if snail:
 		grabbed = true
 		collision_layer = 0
@@ -77,6 +77,11 @@ func on_click() -> void:
 		_set_art("pez goblo alterado")
 		GameManager.stun_left = 5
 		GameManager.sound_requested.emit("puffer")
+
+func on_pointer_click(pointer: Node3D) -> void:
+	if leaving or triggered or grabbed: return
+	_pointer = pointer
+	on_click()
 func release() -> void:
 	grabbed = false
 	var local := _camera.to_local(global_position)

@@ -35,14 +35,16 @@ window/size/viewport_height=1080
 3d_physics/layer_1="world"
 3d_physics/layer_2="interactable"
 
-[xr]
-
-
-openxr/enabled=true
-shaders/enabled=true
-
 [rendering]
 
 renderer/rendering_method="gl_compatibility"
-renderer/rendering_method.windows="forward_plus"
 textures/vram_compression/import_etc2_astc=true
+renderer/rendering_method.windows="forward_plus"
+
+[xr]
+
+openxr/enabled=true
+openxr/extensions/hand_tracking=true
+openxr/extensions/hand_interaction_profile=true
+openxr/extensions/hand_tracking_unobstructed_data_source=true
+shaders/enabled=true
