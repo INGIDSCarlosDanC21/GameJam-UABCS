@@ -37,28 +37,20 @@ func _setup_xr() -> void:
 func _setup_sky() -> void:
 	var env := _world_env.environment.duplicate(true) as Environment
 	_world_env.environment = env
-	if env == null:
-		env = Environment.new()
-		_world_env.environment = env
-	var sky := Sky.new()
-	var mat := PanoramaSkyMaterial.new()
-	mat.panorama = preload("res://assets/sky/ocean_reef_360.png")
-	sky.sky_material = mat
-	env.background_mode = Environment.BG_SKY
-	env.sky = sky
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	env.ambient_light_energy = 0.85
-	var path := "res://assets/sky/ocean_360.ogv"
-	if ResourceLoader.exists(path):
-		mat.panorama = _sky_vp.get_texture()
-		sky.process_mode = Sky.PROCESS_MODE_REALTIME
-		_video.visible = true
-		_video.stream = load(path)
-		_video.loop = true
-		_video.play()
-	else:
-		_sky_vp.render_target_update_mode = SubViewport.UPDATE_DISABLED
-
+	env.background_mode = Environment.BG_COLOR
+	env.background_color = Color("062737")
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	env.ambient_light_color = Color("66a6b3")
+	env.ambient_light_energy = 0.6
+	env.fog_enabled = true
+	env.fog_light_color = Color("0c5267")
+	env.fog_density = 0.018
+	_video.stop()
+	_video.hide()
+	_sky_vp.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	var ocean := Node3D.new()
+	ocean.set_script(preload("res://scripts/OceanWorld.gd"))
+	add_child(ocean)
 
 func _refresh_hud(_coins: int) -> void:
 	_hud.text = "Monedas: %d\nSalud océano: %d" % [_coins, int(GameManager.ocean_health)]

@@ -16,6 +16,12 @@ var _pulse := 0.0
 var _hostile_timer := 18.0
 var _screen_mat: ShaderMaterial
 var _screen: MeshInstance3D
+var _cabin_frame: Node3D
+var _descent_left := 0.0
+var _descent_duration := 3.5
+var _depth_visual := 0.0
+var _camera: Camera3D
+var _rumble: AudioStreamPlayer
 func _ready() -> void:
 	GameManager.cleaner_bought.connect(_buy_cleaner)
 	GameManager.bubbles_requested.connect(_bubbles)
@@ -26,6 +32,11 @@ func _ready() -> void:
 	GameManager.depth_changed.connect(_depth_announcement)
 	GameManager.level_changed.connect(_upgrade_cleaners)
 	var camera := get_parent().get_node("XROrigin3D/XRCamera3D")
+	_camera = camera
+	_rumble = AudioStreamPlayer.new()
+	_rumble.stream = _descent_audio()
+	_rumble.volume_db = -18
+	add_child(_rumble)
 	_screen = MeshInstance3D.new()
 	var quad := QuadMesh.new()
 	quad.size = Vector2(2,2)
@@ -67,6 +78,7 @@ func _ready() -> void:
 	add_child(motes)
 	var frame := Node3D.new()
 	frame.set_script(preload("res://scripts/CabinFrame.gd"))
+	_cabin_frame = frame
 	add_child(frame)
 	var lamp := MeshInstance3D.new()
 	var bulb := SphereMesh.new()
@@ -107,6 +119,7 @@ func _button(type: int) -> Area3D:
 	return button
 
 func _process(delta: float) -> void:
+	_update_descent(delta)
 	var world_delta := delta * GameManager.world_time_scale()
 	_pulse += delta
 	_screen.visible = not GameManager.defeated and (GameManager.fever_left > 0 or GameManager.stun_left > 0)
@@ -123,10 +136,13 @@ func _process(delta: float) -> void:
 	var alive := not GameManager.is_run_over()
 	var fever := GameManager.fever_left > 0 and alive
 	var health := GameManager.ocean_health / 100.0
-	var illumination := maxf(0.018, health * health) * pow(0.75, GameManager.depth)
+	_depth_visual = lerpf(_depth_visual, float(GameManager.depth), 1.0 - exp(-delta))
+	var illumination := maxf(0.018, health * health) * pow(0.75, _depth_visual)
 	if fever: illumination = maxf(0.9, illumination)
 	if GameManager.stun_left > 0: illumination = 0.025
 	if _env:
+		_env.fog_light_color = Color("0c5267").lerp(Color("020b1c"), minf(1.0, _depth_visual / 5.0))
+		_env.fog_density = 0.018 + minf(0.035, _depth_visual * 0.006)
 		_env.background_energy_multiplier = lerpf(_env.background_energy_multiplier, illumination, 1.0 - exp(-2 * delta))
 		_env.ambient_light_energy = 0.45 * illumination
 	for light in _lights:
@@ -189,11 +205,15 @@ func _coin_fly(at: Vector3, amount: int) -> void:
 
 func _depth_announcement(value: int) -> void:
 	if not is_instance_valid(_descend): return
+	_descent_left = _descent_duration
+	_rumble.play()
+	for index in 5:
+		_bubbles(Vector3(-1.2 + index * 0.6, 1.0, -2.2))
 	_descend.show()
 	_descend.collision_layer = 0
 	_descend.get_node("Label3D").text = "PROFUNDIDAD %d\nDESCENSO AUTOMÁTICO" % value
 	_descend._panel.albedo_color = Color("8d1924")
-	var timer := get_tree().create_timer(2.6)
+	var timer := get_tree().create_timer(_descent_duration)
 	timer.timeout.connect(func():
 		if is_instance_valid(_descend): _descend.hide()
 	)
@@ -204,6 +224,8 @@ func _fever(active: bool) -> void:
 
 func _defeat(value: bool) -> void:
 	if not value: return
+	_descent_left = 0.0
+	_rumble.stop()
 	_descend.hide()
 	_mission.hide()
 	GameManager.sound_requested.emit("success" if GameManager.expedition_success else "death")
@@ -262,3 +284,29 @@ func _bubbles(at: Vector3) -> void:
 	burst.add_to_group("bubble_bursts")
 	add_child(burst)
 	burst.global_position = at
+
+func _update_descent(delta: float) -> void:
+	_descent_left = maxf(0.0, _descent_left - delta)
+	var strength := sin(PI * (1.0 - _descent_left / _descent_duration)) if _descent_left > 0 else 0.0
+	_cabin_frame.position.x = sin(_pulse * 41.0) * 0.012 * strength
+	_cabin_frame.rotation.z = sin(_pulse * 29.0) * 0.008 * strength
+	if not get_viewport().use_xr:
+		_camera.h_offset = sin(_pulse * 37.0) * 0.006 * strength
+		_camera.v_offset = sin(_pulse * 43.0) * 0.004 * strength
+	if _descent_left > 0:
+		_descend.get_node("Label3D").text = "DESCENDIENDO\nPROFUNDIDAD %d" % GameManager.depth
+
+func _descent_audio() -> AudioStreamWAV:
+	var audio := AudioStreamWAV.new()
+	audio.format = AudioStreamWAV.FORMAT_16_BITS
+	audio.mix_rate = 22050
+	var samples := int(audio.mix_rate * _descent_duration)
+	var bytes := PackedByteArray()
+	bytes.resize(samples * 2)
+	for index in samples:
+		var t := float(index) / audio.mix_rate
+		var envelope := sin(PI * t / _descent_duration)
+		var tone := sin(TAU * 47.0 * t) * 0.45 + sin(TAU * 73.0 * t) * 0.2
+		bytes.encode_s16(index * 2, int(tone * envelope * 18000))
+	audio.data = bytes
+	return audio

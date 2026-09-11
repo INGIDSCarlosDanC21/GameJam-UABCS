@@ -8,6 +8,8 @@ La versión entregada en la Game Jam está en el commit `0867a63`. Los ejecutabl
 
 ## Guion breve
 
+El entorno ya usa relieve submarino, rocas y algas 3D con shaders de corriente y cáusticas animadas. Es arte procedural en desarrollo, no un render fotorealista terminado. La superficie del agua se aleja al descender y cambian niebla y color. El descenso dura 3,5 segundos con burbujas y sonido de motores; en PC mueve ligeramente la vista y en XR solo vibra el marco, conservando el seguimiento de cabeza. No se exportaron versiones con estos cambios.
+
 La expedición tiene un límite de cinco minutos. Sus objetivos son retirar 15 residuos (manualmente o con robots), desplegar al menos un Filtrobot y después mantener salud de 70% o más durante 30 segundos consecutivos. Bajar de ese umbral reinicia la racha. Es posible ganar antes del límite; agotarlo muestra un cierre de misión incompleta. Llegar a cero de salud conserva la derrota por contaminación.
 
 Un pequeño arrecife geométrico recupera color y altura conforme aumenta la limpieza y se conserva la salud. Es una representación simbólica: no reproduce los tiempos reales de recuperación coralina.
