@@ -20,14 +20,63 @@ func run() -> void:
 	root.add_child(main)
 	current_scene = main
 	await create_timer(0.5).timeout
+	if DisplayServer.get_name() != "headless":
+		await RenderingServer.frame_post_draw
+		root.get_texture().get_image().save_png("res://.godot/cabin-preview.png")
 	main.get_node("Spawner").set_process(false)
 	for e in get_nodes_in_group("entities"): e.queue_free()
 	await process_frame
 	var gm = root.get_node("GameManager")
+	check(main.get_node("Cabin/ShopFilter").get_parent() == main.get_node("Cabin"), "shop remains fixed in cabin")
 	var session = main.get_node("OceanSession")
+	var glass_checked := false
+	for mesh in main.get_node("Sketchfab_Scene").find_children("*", "MeshInstance3D", true, false):
+		for index in mesh.mesh.get_surface_count():
+			var material = mesh.get_active_material(index)
+			if material is StandardMaterial3D and material.resource_name == "Glass":
+				glass_checked = material.albedo_color.a < 0.08
+	check(glass_checked, "cabin glass preserves visibility of ocean and HUD")
+	check(main.has_node("WindowWaterLight") and main.get_node("WindowWaterLight") in session._lights, "window light follows ocean lighting lifecycle")
+	var left = main.get_node("XROrigin3D/LeftController")
+	var right = main.get_node("XROrigin3D/RightController")
+	check(left.has_method("activate_target") and not left.desktop_enabled, "left pointer is independent and does not duplicate mouse")
+	var shared_fish = entity(main, 0, "pez azul", Vector3(0, 1.5, -3))
+	var before_catches: int = gm.fish_caught
+	left.activate_target(shared_fish)
+	right.activate_target(shared_fish)
+	check(gm.fish_caught == before_catches + 1, "two pointers cannot collect one fish twice")
+	var shop = main.get_node("Cabin/ShopBait")
+	left._set_hover(shop, true)
+	right._set_hover(shop, true)
+	left._set_hover(shop, false)
+	check(shop._hover, "hover persists while the other pointer remains")
+	right._set_hover(shop, false)
+	var ocean = main.get_node("OceanWorld")
+	check(ocean.has_node("ReefRocks") and ocean.has_node("KelpGarden") and ocean.has_node("CoralGarden"), "ocean has batched reef geometry")
+	check(ocean.get_child_count() == 5, "dense reef uses five geometry nodes")
+	right._held = true
+	right._progress = 0.5
+	right._grip_ratio = 0.5
+	right._process(0.01)
+	check(right._capture_ring.visible_instance_count == 12, "capture ring displays partial progress")
+	right._clear_target()
+	right._held = false
+	right._process(0.01)
+	check(right._capture_ring.visible_instance_count == 0 and not right._grip_bar.visible, "interrupted capture clears visual progress")
+	session._depth_announcement(1)
+	session._update_descent(0.4)
+	check(session._descent_left > 0 and session._rumble.playing, "descent starts timed movement and sound")
+	session._update_descent(4.0)
+	check(session._camera.h_offset == 0 and session._camera.v_offset == 0, "descent restores camera offsets")
 	check(gm.fish_stats(0,1,3).reward > gm.fish_stats(0,1,0).reward, "gold aura raises reward")
 	seed(70)
 	var shallow = entity(main,0,"pez azul",Vector3(0,1.5,-3))
+	shallow._animate_swimming(0.1)
+	check(shallow._material.get_shader_parameter("bend_strength") > 0, "living fish bend their body")
+	shallow.direction *= -1
+	var old_yaw: float = shallow._sprite.rotation.y
+	shallow._animate_swimming(0.05)
+	check(absf(angle_difference(old_yaw, shallow._sprite.rotation.y)) > 0.05 and absf(angle_difference(old_yaw, shallow._sprite.rotation.y)) < 1.0, "fish turn visually over time")
 	gm.depth = 3
 	seed(70)
 	var deep = entity(main,0,"pez azul",Vector3(0,1.5,-3))
@@ -49,13 +98,20 @@ func run() -> void:
 	await process_frame
 	check(gm.fish_stats(0, 1.0).damage == 1.2, "easy starting damage")
 	for i in range(24): gm.progress()
-	check(gm.level == 5 and gm.can_descend(), "level five unlocks depth")
-	check(gm.descend() and gm.depth == 1 and not gm.descend(), "one descent per milestone")
+	check(gm.level == 5 and gm.depth == 1, "level five automatically descends")
+	check(not gm.descend() and gm.cleaner_quality() == 2, "milestone cannot repeat and robot evolves")
 	var fish = entity(main, 0, "pez azul", Vector3(0,1.5,-3.5))
 	var trash = entity(main, 1, "lata", fish.position)
 	session._contamination()
 	check(fish.unsuitable and fish.collision_layer == 0, "trash contact disables fish")
+	fish._animate_swimming(0.1)
+	check(fish._material.get_shader_parameter("bend_strength") == 0.0, "unsuitable fish stop swimming deformation")
 	check(fish.get_node("Sprite3D").texture.resource_path.ends_with("pez azul noapto.png"), "matching unsuitable sprite")
+	var oracle = entity(main, 0, "pez oracles", Vector3(1, 1.5, -3.5))
+	oracle.on_click()
+	check(gm.slow_time_left == 5.0, "Oracle starts five second slow time")
+	gm._process(5.1)
+	check(gm.world_time_scale() == 1.0, "Oracle restores world speed")
 	trash.queue_free()
 	fish.queue_free()
 	await process_frame
@@ -72,6 +128,8 @@ func run() -> void:
 	gm.coins = 200
 	check(gm.buy_filter() and gm.active_cleaners == 1, "filter purchase creates cleaner")
 	var robot = get_nodes_in_group("cleaners")[0]
+	robot._animate_heading(Vector3.LEFT, 0.05)
+	check(absf(robot._sprite.rotation.y) > 0.05 and absf(robot._sprite.rotation.y) < 1.0, "robot turns gradually instead of flipping instantly")
 	trash = entity(main, 1, "lata", robot.position)
 	var coins: int = gm.coins
 	robot._physics_process(0.01)
@@ -91,12 +149,36 @@ func run() -> void:
 	gm._process(5.1)
 	puff._physics_process(5.1)
 	check(gm.stun_left == 0 and puff.leaving, "puffer leaves after stun")
+	var arrivals: Array[Node3D] = []
+	var spaced := true
+	for index in 10:
+		var arrival := Area3D.new()
+		arrival.set_script(load("res://scripts/Hostile.gd"))
+		arrival.snail = true
+		main.add_child(arrival)
+		arrival.set_physics_process(false)
+		for other in arrivals:
+			if arrival._settle_target.distance_to(other._settle_target) < 0.16: spaced = false
+		arrivals.append(arrival)
+	check(spaced, "ten snails reserve distinct destinations")
+	check(arrivals[0]._offset.y < -0.6, "snails enter below the view")
+	var entry_y: float = arrivals[0]._offset.y
+	arrivals[0]._physics_process(0.1)
+	check(arrivals[0]._offset.y > entry_y and arrivals[0]._offset.y < entry_y + 0.03, "snail arrival crawls rather than teleporting")
+	for arrival in arrivals:
+		arrival._physics_process(15.0)
+		check(arrival._offset.distance_to(arrival._settle_target) < 0.003, "snail settles at reserved position")
+		arrival.queue_free()
+	await process_frame
 	var snail := Area3D.new()
 	snail.set_script(load("res://scripts/Hostile.gd"))
 	snail.snail = true
 	main.add_child(snail)
-	snail.on_click()
+	left.activate_target(snail)
 	check(snail.grabbed and snail.collision_layer == 0, "snail grabbed")
+	check(snail._pointer == left and left.held_snail == snail, "snail follows capturing left hand")
+	right.activate_target(snail)
+	check(snail._pointer == left, "second hand cannot steal a held snail")
 	snail.global_position = snail._camera.to_global(Vector3(0.6,0,-0.9))
 	snail.release()
 	check(snail.leaving, "snail thrown outside view radius")
@@ -113,11 +195,41 @@ func run() -> void:
 	gm.clean_trash()
 	check(gm.defeated and gm.ocean_health == 0 and session._restart.visible, "terminal defeat and restart menu")
 	check(not main.get_node("Cabin/ShopBait").visible, "gameplay shop replaced")
+	check(session._restart.get_node("Label3D").text.contains("residuos retirados"), "educational debrief shows expedition impact")
 	await create_timer(2).timeout
-	await RenderingServer.frame_post_draw
-	root.get_texture().get_image().save_png("res://.godot/defeat-preview.png")
+	if DisplayServer.get_name() != "headless":
+		await RenderingServer.frame_post_draw
+		root.get_texture().get_image().save_png("res://.godot/defeat-preview.png")
 	gm.restart()
 	await create_timer(1).timeout
 	check(is_instance_valid(current_scene) and current_scene != main and gm.level == 1 and gm.depth == 0 and gm.ocean_health == 100 and not gm.defeated, "restart resets run")
+	current_scene.get_node("Spawner").set_process(false)
+	check(gm.robots_deployed == 0 and not gm.expedition_finished and gm.expedition_left > 298, "restart resets expedition")
+	gm.waste_removed = gm.WASTE_GOAL
+	gm.advance_expedition(31)
+	check(not gm.expedition_finished and gm.conservation_time == 0, "cleanup alone cannot complete mission")
+	gm.coins = 100
+	gm.buy_filter()
+	gm.advance_expedition(15)
+	check(gm.conservation_time == 15, "healthy reef starts conservation objective")
+	gm._set_health(69)
+	gm.advance_expedition(1)
+	check(gm.conservation_time == 0, "low health breaks conservation streak")
+	gm._set_health(80)
+	gm.advance_expedition(30)
+	check(gm.expedition_finished and gm.expedition_success and not gm.defeated, "all three objectives win the expedition")
+	coins = gm.coins
+	gm.catch_fish()
+	gm.clean_trash()
+	check(gm.coins == coins and not gm.buy_filter(), "completed expedition blocks economy changes")
+	check(current_scene.get_node("OceanSession")._restart.get_node("Label3D").text.contains("MISIÓN CUMPLIDA"), "victory has a positive debrief")
+	if DisplayServer.get_name() != "headless":
+		await create_timer(0.5).timeout
+		await RenderingServer.frame_post_draw
+		root.get_texture().get_image().save_png("res://.godot/mission-preview.png")
+	gm.restart()
+	await create_timer(0.5).timeout
+	gm.advance_expedition(300)
+	check(gm.expedition_finished and not gm.expedition_success and not gm.defeated, "time limit ends incomplete mission without ecological defeat")
 	print("FAILURES: ", failures)
 	quit(failures)

@@ -1,8 +1,12 @@
 extends XRController3D
-## Spring-driven bone claw. Only the cursor lags; head tracking stays untouched.
+## Independent XR/mouse pointer; visual feedback never moves the tracked camera.
 @export var stiffness: float = 100.0
 @export var damping: float = 20.0
 @export var max_speed: float = 7.0
+@export var desktop_enabled := true
+@export var pointer_color := Color("7bffdf")
+@export_range(0.0, 1.0) var haptic_strength := 0.5
+var _hovering: Node3D
 @onready var _ray: RayCast3D = $RayCast3D
 @onready var _camera: Camera3D = get_parent().get_node("XRCamera3D")
 var _claw: Node3D
@@ -22,8 +26,14 @@ var held_snail: Node3D
 var _elapsed := 0.0
 var _idle := 0.0
 var _last_aim := Vector3.FORWARD
+var _capture_ring: MultiMesh
+var _cursor_material: StandardMaterial3D
+var _activation_flash := 0.0
+var _activation_color := Color.WHITE
 
 func _ready() -> void:
+	add_to_group("xr_pointers")
+	GameManager.depth_changed.connect(func(_depth: int): pulse(0.6, 0.3))
 	button_pressed.connect(_pressed)
 	button_released.connect(_released)
 	$LaserBeam.hide()
@@ -49,15 +59,35 @@ func _ready() -> void:
 	ring.outer_radius = 0.058
 	var mat := StandardMaterial3D.new()
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.albedo_color = Color("7bffdf")
+	mat.albedo_color = pointer_color
+	_cursor_material = mat
 	_part(_claw, ring, Vector3.ZERO, mat)
 	_claw.get_child(_claw.get_child_count() - 1).rotation.x = PI / 2
+	var ticks := MultiMeshInstance3D.new()
+	var shape := BoxMesh.new()
+	shape.size = Vector3(0.008, 0.016, 0.003)
+	_capture_ring = MultiMesh.new()
+	_capture_ring.transform_format = MultiMesh.TRANSFORM_3D
+	_capture_ring.mesh = shape
+	_capture_ring.instance_count = 24
+	_capture_ring.visible_instance_count = 0
+	ticks.multimesh = _capture_ring
+	ticks.material_override = green
+	ticks.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_claw.add_child(ticks)
+	for index in 24:
+		var angle := float(index) / 24.0 * TAU
+		_capture_ring.set_instance_transform(index, Transform3D(Basis(Vector3.BACK, -angle), Vector3(sin(angle), cos(angle), 0) * 0.075))
 	_info = Label3D.new()
 	_info.font_size = 24
 	_info.pixel_size = 0.0013
 	_info.outline_size = 6
 	_info.position = Vector3(0, -0.24, -1.0)
 	_camera.add_child(_info)
+	if not desktop_enabled:
+		_info.reparent(_claw, false)
+		_info.position = Vector3(0, -0.12, 0)
+		_info.pixel_size = 0.001
 
 func _part(parent: Node3D, mesh: Mesh, at: Vector3, mat: Material) -> void:
 	var part := MeshInstance3D.new()
@@ -67,8 +97,26 @@ func _part(parent: Node3D, mesh: Mesh, at: Vector3, mat: Material) -> void:
 	part.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	parent.add_child(part)
 
+func _process(delta: float) -> void:
+	_activation_flash = maxf(0.0, _activation_flash - delta)
+	var capturing := _held and _progress > 0.0 and GameManager.stun_left <= 0
+	var ratio := _grip_ratio if capturing else 0.0
+	_capture_ring.visible_instance_count = ceili(ratio * 24.0)
+	_grip_bar.visible = capturing
+	_grip_bar.scale.x = maxf(0.001, ratio)
+	var targeted := is_instance_valid(_target) and _target.is_in_group("interactable")
+	var color := pointer_color if targeted else Color("718893")
+	if capturing: color = Color("ffe39a")
+	if GameManager.stun_left > 0: color = Color("ff6269")
+	if _activation_flash > 0: color = _activation_color
+	_cursor_material.albedo_color = color
+	var size := 1.12 if targeted else 0.85
+	if capturing: size += sin(_elapsed * 12.0) * 0.05
+	size += _activation_flash * 0.8
+	_claw.scale = Vector3.ONE * size
+
 func _unhandled_input(event: InputEvent) -> void:
-	if not get_viewport().use_xr and event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+	if desktop_enabled and not get_viewport().use_xr and event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		_held = event.pressed
 		_idle = 0
 		if not _held: _release_snail()
@@ -83,6 +131,9 @@ func _released(button: String) -> void:
 		_release_snail()
 
 func _physics_process(delta: float) -> void:
+	if not desktop_enabled and not get_viewport().use_xr:
+		_claw.hide()
+		return
 	_elapsed += delta
 	_idle += delta
 	_info.modulate.a = move_toward(_info.modulate.a, 1.0 if _elapsed < 60 or _idle >= 5 or is_instance_valid(_target) else 0.0, delta)
@@ -93,16 +144,17 @@ func _physics_process(delta: float) -> void:
 		_info.modulate.a = 1
 		_release_snail()
 		return
-	_grip_bar.scale.x = maxf(0.001, _grip_ratio)
-	_grip_bar.visible = _progress > 0
 	if not _held: _pressed_target = null
 	var vr := get_viewport().use_xr
 	if vr and not get_is_active():
 		_held = false
+		_release_snail()
 		_claw.hide()
+		_info.hide()
 		_clear_target()
 		return
 	_claw.show()
+	_info.show()
 	var origin := global_position if vr else _camera.project_ray_origin(get_viewport().get_mouse_position())
 	var desired := -global_basis.z if vr else _camera.project_ray_normal(get_viewport().get_mouse_position())
 	_aim = desired.normalized()
@@ -119,7 +171,6 @@ func _physics_process(delta: float) -> void:
 		hit = _ray.get_collider() as Node3D
 	_claw.global_position = point + (_camera.global_position - point).normalized() * 0.035
 	_claw.global_basis = _camera.global_basis
-	_claw.scale = Vector3.ONE * (1.0 + sin(_elapsed * 5.0) * 0.06)
 	_cooldown = maxf(0, _cooldown - delta)
 	if is_instance_valid(held_snail):
 		_info.text = "Arrastra el caracol al borde y suelta"
@@ -127,10 +178,13 @@ func _physics_process(delta: float) -> void:
 	if hit != _target:
 		_clear_target()
 		_target = hit
+		if is_instance_valid(_target) and _target.is_queued_for_deletion():
+			_target = null
 		if is_instance_valid(_target) and _target.has_method("set_hovered"):
-			_target.set_hovered(true)
+			_set_hover(_target, true)
+		if is_instance_valid(_target): pulse(0.12, 0.025)
 	if not is_instance_valid(_target) or not _target.is_in_group("interactable"):
-		_info.text = "Apunta y mantén gatillo / clic para capturar"
+		_info.text = "Apunta y mantén una pinza para capturar" if _uses_hands() else "Apunta y mantén gatillo / clic para capturar"
 		return
 	if _held and _pressed_target != _target:
 		_pressed_target = _target
@@ -139,7 +193,7 @@ func _physics_process(delta: float) -> void:
 	if _target.has_method("get_stats_text"):
 		_info.text = _target.get_stats_text()
 	else:
-		_info.text = "Mantén para reiniciar" if GameManager.defeated else "Mantén para activar"
+		_info.text = "Mantén para reiniciar" if GameManager.is_run_over() else "Mantén para activar"
 	if not _held or not aligned or _cooldown > 0:
 		_progress = 0.0
 		return
@@ -147,20 +201,52 @@ func _physics_process(delta: float) -> void:
 	if GameManager.fever_left > 0: required = 0.06
 	_progress += delta
 	_grip_ratio = clampf(_progress / required, 0, 1)
-	_info.text += "\nGarra: %d%%" % mini(100, int(100.0 * _progress / required))
+	_info.text += "\nCapturando: %d%%" % mini(100, int(100.0 * _progress / required))
 	if _progress >= required:
 		GameManager.bubbles_requested.emit(point)
-		_target.on_click()
+		activate_target(_target)
 		_progress = 0.0
 		_cooldown = 0.15 if GameManager.fever_left > 0 else 0.3
 		if not is_instance_valid(held_snail): _held = false
 
 func _clear_target() -> void:
 	if is_instance_valid(_target) and _target.has_method("set_hovered"):
-		_target.set_hovered(false)
+		_set_hover(_target, false)
 	_target = null
 	_progress = 0.0
+	_grip_ratio = 0.0
 
 func _release_snail() -> void:
 	if is_instance_valid(held_snail): held_snail.release()
 	held_snail = null
+
+func activate_target(target: Node3D) -> void:
+	if not is_instance_valid(target) or target.is_queued_for_deletion(): return
+	if target.has_method("on_pointer_click"):
+		target.on_pointer_click(self)
+	else:
+		target.on_click()
+	_activation_flash = 0.25
+	_activation_color = Color("a0ffe0")
+	if target.is_in_group("shop_items") and not target._accepted:
+		_activation_color = Color("ff6269")
+	pulse(0.45, 0.065)
+
+func _set_hover(target: Node3D, active: bool) -> void:
+	if active:
+		_hovering = target
+		target.set_hovered(true)
+	else:
+		_hovering = null
+		for pointer in get_tree().get_nodes_in_group("xr_pointers"):
+			if pointer != self and pointer._hovering == target: return
+		target.set_hovered(false)
+
+func pulse(amplitude: float, seconds: float) -> void:
+	if not get_viewport().use_xr or not get_is_active() or haptic_strength <= 0 or _uses_hands(): return
+	trigger_haptic_pulse("haptic", 0.0, clampf(amplitude * haptic_strength, 0, 1), seconds, 0.0)
+
+func _uses_hands() -> bool:
+	var side := "left" if not desktop_enabled else "right"
+	var hand := XRServer.get_tracker("/user/hand_tracker/" + side) as XRHandTracker
+	return hand != null and hand.has_tracking_data and hand.hand_tracking_source == XRHandTracker.HAND_TRACKING_SOURCE_UNOBSTRUCTED

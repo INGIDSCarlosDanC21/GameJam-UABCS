@@ -4,7 +4,8 @@ var _timer := 0.0
 var _seal_timer := 12.0
 var _trash_timer := 1.0
 func _process(delta: float) -> void:
-	if GameManager.defeated: return
+	if GameManager.is_run_over(): return
+	delta *= GameManager.world_time_scale()
 	_timer -= delta
 	_seal_timer -= delta
 	if GameManager.fever_left <= 0:

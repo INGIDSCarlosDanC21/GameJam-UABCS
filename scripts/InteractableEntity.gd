@@ -29,6 +29,8 @@ var _exit_age := -1.0
 var _exit_start := Vector3.ZERO
 var _notifier: VisibleOnScreenNotifier3D
 var _material: ShaderMaterial
+@export_range(0.0, 0.12) var body_bend := 0.045
+var _turn_wait := randf_range(4.0, 8.0)
 @onready var _sprite: Sprite3D = $Sprite3D
 
 func setup(value: Kind, dir: float) -> void:
@@ -45,7 +47,7 @@ func _ready() -> void:
 		add_to_group("fish")
 		if species.is_empty():
 			var r := randf()
-			species = "pez azul" if r < 0.45 else ("pez naranja" if r < 0.8 else ("anginla" if r < 0.995 else "pez dorado millonario"))
+			species = "pez oracles" if GameManager.depth > 0 and r < 0.03 else ("pez azul" if r < 0.45 else ("pez naranja" if r < 0.8 else ("anginla" if r < 0.995 else "pez dorado millonario")))
 			if GameManager.depth > 0 and randf() < 0.15: species = "pez linterna"
 		rarity = 3 if "dorado" in species else (1 if "anginla" in species or "linterna" in species else 0)
 		size_factor = [0.9, 1.1, 1.4].pick_random() * minf(1.55, 1.0 + GameManager.depth * 0.10)
@@ -55,6 +57,8 @@ func _ready() -> void:
 		add_to_group("trash")
 		if species.is_empty(): species = TRASH_ART.pick_random()
 		speed = 0.18
+		# Each discarded object keeps a distinct silhouette as it crosses the viewport.
+		_sprite.rotation.z = randf_range(-PI, PI)
 	else:
 		species = "foca"
 		speed = 0.2
@@ -66,6 +70,7 @@ func _ready() -> void:
 	_material.shader = INK
 	_sprite.material_override = _material
 	_apply_art(_texture_path(species))
+	if kind != Kind.TRASH: _sprite.rotation.y = 0.0 if direction > 0 else PI
 	if aura > 0:
 		_halo = MeshInstance3D.new()
 		var quad := QuadMesh.new()
@@ -101,10 +106,12 @@ func _apply_art(path: String, replacement: Texture2D = null) -> void:
 	var bounds: Rect2i = art_cache[key]
 	_sprite.texture = texture
 	_sprite.region_enabled = true
-	_sprite.region_rect = Rect2(bounds.grow(5).intersection(Rect2i(Vector2i.ZERO, Vector2i(texture.get_size()))))
+	var padding := maxi(5, ceili(bounds.size.y * 0.12)) if kind == Kind.FISH else 5
+	_sprite.region_rect = Rect2(bounds.grow(padding).intersection(Rect2i(Vector2i.ZERO, Vector2i(texture.get_size()))))
 	var width := (0.4 if "anginla" in species else 0.25) * size_factor
 	_sprite.pixel_size = width / maxi(1, bounds.size.x)
-	_sprite.flip_h = kind != Kind.TRASH and direction < 0
+	_sprite.flip_h = false
+	_material.set_shader_parameter("art_rect", Vector4(float(bounds.position.x) / texture.get_width(), float(bounds.position.y) / texture.get_height(), float(bounds.size.x) / texture.get_width(), float(bounds.size.y) / texture.get_height()))
 	_material.set_shader_parameter("art", texture)
 	_material.set_shader_parameter("texel", Vector2.ONE / texture.get_size())
 	_material.set_shader_parameter("glow_color", Color(1, 0.7, 0.15, 0.2) if rarity == 3 else Color(0, 0, 0, 0))
@@ -113,8 +120,10 @@ func _apply_art(path: String, replacement: Texture2D = null) -> void:
 	$CollisionShape3D.shape = box
 
 func _physics_process(delta: float) -> void:
-	if GameManager.defeated: return
+	if GameManager.is_run_over(): return
+	delta *= GameManager.world_time_scale()
 	_age += delta
+	_animate_swimming(delta)
 	if _exit_age >= 0:
 		_exit_age += delta
 		var t := _exit_age
@@ -156,21 +165,40 @@ func _physics_process(delta: float) -> void:
 			_exit_age = 0
 			_exit_start = position
 
+func _animate_swimming(delta: float) -> void:
+	if kind == Kind.TRASH: return
+	var swimming := kind == Kind.FISH and not unsuitable
+	_material.set_shader_parameter("swim_time", _age * (9.0 if angry else 5.5) + _phase)
+	_material.set_shader_parameter("bend_strength", body_bend * (1.65 if "anginla" in species else 1.0) if swimming else 0.0)
+	var tilt := sin(_age * 2.8 + _phase) * 0.12 if not unsuitable else -0.25 * direction
+	_sprite.rotation.z = lerp_angle(_sprite.rotation.z, tilt, 1.0 - exp(-delta * 5.0))
+	_sprite.rotation.y = lerp_angle(_sprite.rotation.y, 0.0 if direction > 0 else PI, 1.0 - exp(-delta * 5.0))
+	if not swimming or _exit_age >= 0 or GameManager.fever_left > 0: return
+	_turn_wait -= delta
+	if _turn_wait <= 0:
+		_turn_wait = randf_range(4.0, 8.0)
+		if absf(position.x) < 2.5 and randf() < 0.6: direction *= -1.0
+
 func on_target_pressed() -> void:
-	if "anginla" in species and not unsuitable and not GameManager.defeated:
+	if "anginla" in species and not unsuitable and not GameManager.is_run_over():
 		angry = true
 		if _local_light: _local_light.show()
 		_apply_art(_texture_path("anginla enojada"))
 
 func on_click() -> void:
-	if _clicked or unsuitable or GameManager.defeated: return
+	if _clicked or unsuitable or GameManager.is_run_over(): return
 	if "anginla" in species:
 		on_target_pressed()
 		return
 	_clicked = true
 	if kind == Kind.SEAL: GameManager.start_fever()
+	elif "oracles" in species:
+		GameManager.start_slow_time()
 	elif kind == Kind.TRASH: GameManager.clean_trash()
-	else: GameManager.catch_fish(rarity, size_factor, aura)
+	else:
+		var reward := GameManager.fish_stats(rarity, size_factor, aura)
+		GameManager.coin_requested.emit(global_position, reward.reward)
+		GameManager.catch_fish(rarity, size_factor, aura)
 	queue_free()
 
 func make_unsuitable() -> void:
@@ -185,6 +213,7 @@ func make_unsuitable() -> void:
 	var found := false
 	if species == "anginla": noapto_texture = load("res://assets/art/anginla noapta.png")
 	if species == "pez dorado millonario": noapto_texture = load("res://assets/art/pez dorado noapto.png")
+	if species == "pez oracles": noapto_texture = load("res://assets/art/oracles noapto.png")
 	if noapto_texture:
 		_apply_art("", noapto_texture)
 		found = true
@@ -204,7 +233,7 @@ func make_unsuitable() -> void:
 	add_child(tag)
 
 func collect_by_robot() -> bool:
-	if kind != Kind.TRASH or _clicked or GameManager.defeated: return false
+	if kind != Kind.TRASH or _clicked or GameManager.is_run_over(): return false
 	_clicked = true
 	GameManager.clean_trash(false)
 	queue_free()
@@ -223,6 +252,7 @@ func _finish_exit() -> void:
 func get_stats_text() -> String:
 	if kind == Kind.SEAL: return "FOCA / POWER UP\nFiebre de peces: 10 segundos"
 	if kind == Kind.TRASH: return "%s / +5 monedas\nLimpia para proteger a los peces" % species.capitalize()
+	if "oracles" in species: return "PEZ ORACLE / PODER\nRalentiza el tiempo durante 5 segundos"
 	if "anginla" in species: return "ANGUILA / No molestar\nAl tocarla contamina peces cercanos"
 	var stats := GameManager.fish_stats(rarity, size_factor, aura)
 	return "%s | +%d monedas / -%.1f salud\n%.2f m/s | agarre %.2f s | aura %d/3" % [species.capitalize(), stats.reward, stats.damage, speed, capture_time, aura]

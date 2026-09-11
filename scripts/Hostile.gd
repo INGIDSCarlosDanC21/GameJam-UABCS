@@ -12,6 +12,9 @@ var _pointer: Node3D
 var _offset := Vector3.ZERO
 var _leave_age := 0.0
 var _snail_index := 0
+var _settle_target := Vector3.ZERO
+var _crawling := false
+const SNAIL_GAP := 0.17
 func _ready() -> void:
 	add_to_group("hostiles")
 	add_to_group("interactable")
@@ -26,10 +29,19 @@ func _ready() -> void:
 	_set_art(["caracol 1","caracol2","caracol3"][_snail_index] if snail else "pez goblo tranquilo")
 	var shape := CollisionShape3D.new()
 	var box := SphereShape3D.new()
-	box.radius = 0.11
+	box.radius = 0.08 if snail else 0.11
 	shape.shape = box
 	add_child(shape)
-	_offset = Vector3(randf_range(-0.45,0.45),randf_range(-0.22,0.25),-0.9)
+	var spread := maxf(0.10, 0.32 - GameManager.depth * 0.045)
+	_offset = Vector3(randf_range(-spread,spread),randf_range(-spread * 0.65,spread * 0.65),-0.9)
+	if snail:
+		_settle_target = _choose_snail_slot()
+		var queue_depth := 0
+		for other in get_tree().get_nodes_in_group("hostiles"):
+			if other != self and other.snail and other._crawling and absf(other._settle_target.x - _settle_target.x) < 0.08:
+				queue_depth += 1
+		_offset = Vector3(_settle_target.x, -0.68 - queue_depth * 0.18, -0.9)
+		_crawling = true
 	global_position = _camera.to_global(_offset)
 	if snail: GameManager.sound_requested.emit("snail")
 func _set_art(name_text: String) -> void:
@@ -37,11 +49,12 @@ func _set_art(name_text: String) -> void:
 	var rect := _sprite.texture.get_image().get_used_rect()
 	_sprite.region_enabled = true
 	_sprite.region_rect = Rect2(rect)
-	_sprite.pixel_size = (0.14 if snail else 0.22) / maxi(1,rect.size.x)
+	_sprite.pixel_size = 0.14 / maxi(1, maxi(rect.size.x, rect.size.y)) if snail else 0.22 / maxi(1, rect.size.x)
 func _physics_process(delta: float) -> void:
-	if GameManager.defeated:
+	if GameManager.is_run_over():
 		queue_free()
 		return
+	delta *= GameManager.world_time_scale()
 	age += delta
 	global_basis = _camera.global_basis
 	if leaving:
@@ -52,6 +65,10 @@ func _physics_process(delta: float) -> void:
 	elif grabbed:
 		global_position = _pointer._ray.global_position + _pointer._aim * 0.9
 	elif snail:
+		if _crawling:
+			_offset = _offset.move_toward(_settle_target, delta * 0.18)
+			_crawling = _offset.distance_to(_settle_target) > 0.002
+		_sprite.rotation.z = lerp_angle(_sprite.rotation.z, sin(age * 5.0) * 0.09 if _crawling else 0.0, 1.0 - exp(-delta * 6.0))
 		global_position = _camera.to_global(_offset)
 	elif triggered:
 		if age >= 5: depart()
@@ -63,7 +80,7 @@ func _physics_process(delta: float) -> void:
 func on_target_pressed() -> void:
 	if not snail: on_click()
 func on_click() -> void:
-	if leaving or triggered: return
+	if leaving or triggered or grabbed: return
 	if snail:
 		grabbed = true
 		collision_layer = 0
@@ -75,6 +92,11 @@ func on_click() -> void:
 		_set_art("pez goblo alterado")
 		GameManager.stun_left = 5
 		GameManager.sound_requested.emit("puffer")
+
+func on_pointer_click(pointer: Node3D) -> void:
+	if leaving or triggered or grabbed: return
+	_pointer = pointer
+	on_click()
 func release() -> void:
 	grabbed = false
 	var local := _camera.to_local(global_position)
@@ -83,7 +105,28 @@ func release() -> void:
 		GameManager.sound_requested.emit("snail_throw")
 	else:
 		_offset = Vector3(local.x,local.y,-0.9)
+		_settle_target = _choose_snail_slot(_offset)
+		_crawling = true
 		collision_layer = 2
+
+func _choose_snail_slot(preferred: Vector3 = Vector3(0, 0.16, -0.9)) -> Vector3:
+	var best := Vector3(0, 0.16, -0.9)
+	var score := INF
+	for row in 3:
+		for column in 5:
+			var slot := Vector3((column - 2) * SNAIL_GAP, 0.16 - row * SNAIL_GAP, -0.9)
+			var free := true
+			for other in get_tree().get_nodes_in_group("hostiles"):
+				if other == self or not other.snail or other.leaving or other.is_queued_for_deletion(): continue
+				if slot.distance_to(other._settle_target) < SNAIL_GAP * 0.9:
+					free = false
+					break
+			if not free: continue
+			var candidate := slot.distance_to(preferred) + randf_range(0.0, 0.04)
+			if candidate < score:
+				score = candidate
+				best = slot
+	return best
 func depart() -> void:
 	leaving = true
 	collision_layer = 0
