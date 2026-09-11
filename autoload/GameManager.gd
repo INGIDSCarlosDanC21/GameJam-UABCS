@@ -7,10 +7,18 @@ signal depth_changed(value: int)
 signal fever_changed(active: bool)
 signal cleaner_bought(quality: int)
 signal sound_requested(event: String)
+signal sound_at_requested(event: String, at: Vector3)
 signal bubbles_requested(at: Vector3)
 signal coin_requested(at: Vector3, amount: int)
 signal expedition_ended(success: bool)
 const EXPEDITION_SECONDS := 300.0
+enum PlayMode { EDUCATIONAL, ARCADE }
+var play_mode: PlayMode = PlayMode.EDUCATIONAL
+var mode_selected := false
+
+func select_mode(value: PlayMode) -> void:
+	play_mode = value
+	mode_selected = true
 const WASTE_GOAL := 15
 const HEALTH_GOAL := 70.0
 const CONSERVATION_SECONDS := 30.0
@@ -36,16 +44,8 @@ var stun_left := 0.0
 var slow_time_left := 0.0
 var waste_removed := 0
 var fish_caught := 0
-var _pitch_fx: AudioEffectPitchShift
 
 func _ready() -> void:
-	var bus := AudioServer.get_bus_index("Master")
-	for i in AudioServer.get_bus_effect_count(bus):
-		if AudioServer.get_bus_effect(bus, i) is AudioEffectPitchShift:
-			_pitch_fx = AudioServer.get_bus_effect(bus, i)
-	if not _pitch_fx:
-		_pitch_fx = AudioEffectPitchShift.new()
-		AudioServer.add_bus_effect(bus, _pitch_fx)
 	_apply_audio()
 
 func _process(delta: float) -> void:
@@ -62,10 +62,10 @@ func difficulty() -> float:
 	return minf(2.3, 1.0 + (level - 1) * 0.05 + depth * 0.12)
 
 func is_run_over() -> bool:
-	return defeated or expedition_finished
+	return not mode_selected or defeated or expedition_finished
 
 func advance_expedition(delta: float) -> void:
-	if is_run_over(): return
+	if is_run_over() or play_mode == PlayMode.ARCADE: return
 	var elapsed := minf(delta, expedition_left)
 	expedition_left = maxf(0.0, expedition_left - elapsed)
 	if waste_removed >= WASTE_GOAL and robots_deployed > 0 and ocean_health >= HEALTH_GOAL:
@@ -82,6 +82,7 @@ func advance_expedition(delta: float) -> void:
 		expedition_ended.emit(expedition_success)
 
 func mission_text() -> String:
+	if play_mode == PlayMode.ARCADE: return "ARCADE · SIN LÍMITE DE TIEMPO · PROTEGE EL OCÉANO"
 	if waste_removed < WASTE_GOAL:
 		return "1/3 · RETIRA RESIDUOS  %d/%d" % [waste_removed, WASTE_GOAL]
 	if robots_deployed == 0:
@@ -190,8 +191,9 @@ func _set_health(value: float) -> void:
 		defeat_changed.emit(true)
 
 func _apply_audio() -> void:
-	AudioServer.set_bus_volume_db(0, linear_to_db(lerpf(0.2, 1, ocean_health / 100.0)))
-	if _pitch_fx: _pitch_fx.pitch_scale = lerpf(0.7, 1, ocean_health / 100.0)
+	# Gameplay attenuation never muffles UI or emergency cues, or overwrites Master.
+	var bus := AudioServer.get_bus_index("World")
+	if bus >= 0: AudioServer.set_bus_volume_db(bus, lerpf(-9.0, 0.0, ocean_health / MAX_HEALTH))
 
 func restart() -> void:
 	expedition_left = EXPEDITION_SECONDS

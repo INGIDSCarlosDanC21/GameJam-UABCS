@@ -43,7 +43,7 @@ func _ready() -> void:
 		_offset = Vector3(_settle_target.x, -0.68 - queue_depth * 0.18, -0.9)
 		_crawling = true
 	global_position = _camera.to_global(_offset)
-	if snail: GameManager.sound_requested.emit("snail")
+	if snail: GameManager.sound_at_requested.emit("snail", global_position)
 func _set_art(name_text: String) -> void:
 	_sprite.texture = load("res://assets/art/" + name_text + ".png")
 	var rect := _sprite.texture.get_image().get_used_rect()
