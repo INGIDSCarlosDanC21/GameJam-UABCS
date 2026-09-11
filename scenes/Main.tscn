@@ -15,6 +15,7 @@
 [ext_resource type="Texture2D" uid="uid://jlv1dd5bfqsw" path="res://assets/art/filtroBot iconoV1.png" id="13_filter_1"]
 [ext_resource type="Texture2D" uid="uid://bfjii6o11u3u4" path="res://assets/art/filtroBot iconov2.png" id="14_filter_2"]
 [ext_resource type="Texture2D" uid="uid://ccobvm6vch8ga" path="res://assets/art/filtroBot iconoV3.png" id="15_filter_3"]
+[ext_resource type="Script" path="res://scripts/AudioDirector.gd" id="16_audio"]
 
 [sub_resource type="Environment" id="Environment_1"]
 background_mode = 1
@@ -190,3 +191,6 @@ script = ExtResource("10_session")
 
 [node name="SoundHub" type="Node" parent="." unique_id=1125762549]
 script = ExtResource("11_sound")
+
+[node name="AudioDirector" type="Node" parent="SoundHub"]
+script = ExtResource("16_audio")

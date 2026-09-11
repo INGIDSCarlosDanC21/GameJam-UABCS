@@ -30,6 +30,7 @@ func _physics_process(delta: float) -> void:
 	if _bubble_time <= 0:
 		_bubble_time = 1.3 / quality
 		GameManager.bubbles_requested.emit(global_position)
+		GameManager.sound_at_requested.emit("robot", global_position)
 	cooldown -= delta
 	if age >= 60:
 		GameManager.active_cleaners = maxi(0, GameManager.active_cleaners - 1)

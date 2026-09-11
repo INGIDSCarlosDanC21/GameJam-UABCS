@@ -36,6 +36,7 @@ func _ready() -> void:
 	_rumble = AudioStreamPlayer.new()
 	_rumble.stream = _descent_audio()
 	_rumble.volume_db = -18
+	_rumble.bus = "Ambience"
 	add_child(_rumble)
 	_screen = MeshInstance3D.new()
 	var quad := QuadMesh.new()
@@ -252,7 +253,7 @@ func _expedition_end(success: bool) -> void:
 		"Conservar también es dejar peces en el océano." if success else "Prueba a invertir en limpieza y reducir capturas."]
 
 func explode_at(at: Vector3) -> void:
-	GameManager.sound_requested.emit("explosion")
+	GameManager.sound_at_requested.emit("explosion", at)
 	var effect: Node3D
 	if explosion_frames:
 		var animation := AnimatedSprite3D.new()

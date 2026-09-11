@@ -60,13 +60,5 @@ func _on_health(_v: float) -> void:
 	_refresh_hud(GameManager.coins)
 
 func _setup_music() -> void:
-	var audio: AudioStreamPlayer = $AmbientAudio
-	var music := load("res://assets/audio/music/UnderWater World Theme Official Music  Plants vs. Zombies 2 Chinese Ver.mp3") as AudioStreamMP3
-	if music:
-		music = music.duplicate()
-		music.loop = true
-		audio.stream = music
-		audio.bus = "Master"
-		audio.volume_db = -35.0
-		audio.play()
-		create_tween().tween_property(audio, "volume_db", -14.0, 2.5)
+	# SoundHub owns the dynamic score; retained scene node stays available to artists.
+	$AmbientAudio.stop()
