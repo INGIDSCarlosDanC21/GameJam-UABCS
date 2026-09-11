@@ -1,10 +1,13 @@
 shader_type spatial;
+#include "res://shaders/water_motion.gdshaderinc"
 render_mode cull_disabled;
 uniform float depth_level = 0.0;
 void vertex() {
 	float tip = 1.0 - UV.y;
 	VERTEX.x *= 0.12 + sin(UV.y * 3.14159) * 0.88;
 	VERTEX.x += sin(TIME * 0.8 + MODEL_MATRIX[3].x * 2.0 + tip * 2.3) * tip * 0.2;
+	vec3 world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	VERTEX += (inverse(MODEL_MATRIX) * vec4(underwater_warp(world, TIME), 0.0)).xyz;
 }
 void fragment() {
 	ALBEDO = mix(vec3(0.18, 0.42, 0.24), vec3(0.025, 0.095, 0.085), clamp(depth_level / 5.0, 0.0, 1.0));

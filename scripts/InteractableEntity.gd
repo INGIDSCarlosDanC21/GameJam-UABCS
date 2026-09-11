@@ -29,6 +29,8 @@ var _exit_age := -1.0
 var _exit_start := Vector3.ZERO
 var _notifier: VisibleOnScreenNotifier3D
 var _material: ShaderMaterial
+@export_range(0.0, 0.12) var body_bend := 0.045
+var _turn_wait := randf_range(4.0, 8.0)
 @onready var _sprite: Sprite3D = $Sprite3D
 
 func setup(value: Kind, dir: float) -> void:
@@ -68,6 +70,7 @@ func _ready() -> void:
 	_material.shader = INK
 	_sprite.material_override = _material
 	_apply_art(_texture_path(species))
+	if kind != Kind.TRASH: _sprite.rotation.y = 0.0 if direction > 0 else PI
 	if aura > 0:
 		_halo = MeshInstance3D.new()
 		var quad := QuadMesh.new()
@@ -103,10 +106,12 @@ func _apply_art(path: String, replacement: Texture2D = null) -> void:
 	var bounds: Rect2i = art_cache[key]
 	_sprite.texture = texture
 	_sprite.region_enabled = true
-	_sprite.region_rect = Rect2(bounds.grow(5).intersection(Rect2i(Vector2i.ZERO, Vector2i(texture.get_size()))))
+	var padding := maxi(5, ceili(bounds.size.y * 0.12)) if kind == Kind.FISH else 5
+	_sprite.region_rect = Rect2(bounds.grow(padding).intersection(Rect2i(Vector2i.ZERO, Vector2i(texture.get_size()))))
 	var width := (0.4 if "anginla" in species else 0.25) * size_factor
 	_sprite.pixel_size = width / maxi(1, bounds.size.x)
-	_sprite.flip_h = kind != Kind.TRASH and direction < 0
+	_sprite.flip_h = false
+	_material.set_shader_parameter("art_rect", Vector4(float(bounds.position.x) / texture.get_width(), float(bounds.position.y) / texture.get_height(), float(bounds.size.x) / texture.get_width(), float(bounds.size.y) / texture.get_height()))
 	_material.set_shader_parameter("art", texture)
 	_material.set_shader_parameter("texel", Vector2.ONE / texture.get_size())
 	_material.set_shader_parameter("glow_color", Color(1, 0.7, 0.15, 0.2) if rarity == 3 else Color(0, 0, 0, 0))
@@ -118,6 +123,7 @@ func _physics_process(delta: float) -> void:
 	if GameManager.is_run_over(): return
 	delta *= GameManager.world_time_scale()
 	_age += delta
+	_animate_swimming(delta)
 	if _exit_age >= 0:
 		_exit_age += delta
 		var t := _exit_age
@@ -158,6 +164,20 @@ func _physics_process(delta: float) -> void:
 		else:
 			_exit_age = 0
 			_exit_start = position
+
+func _animate_swimming(delta: float) -> void:
+	if kind == Kind.TRASH: return
+	var swimming := kind == Kind.FISH and not unsuitable
+	_material.set_shader_parameter("swim_time", _age * (9.0 if angry else 5.5) + _phase)
+	_material.set_shader_parameter("bend_strength", body_bend * (1.65 if "anginla" in species else 1.0) if swimming else 0.0)
+	var tilt := sin(_age * 2.8 + _phase) * 0.12 if not unsuitable else -0.25 * direction
+	_sprite.rotation.z = lerp_angle(_sprite.rotation.z, tilt, 1.0 - exp(-delta * 5.0))
+	_sprite.rotation.y = lerp_angle(_sprite.rotation.y, 0.0 if direction > 0 else PI, 1.0 - exp(-delta * 5.0))
+	if not swimming or _exit_age >= 0 or GameManager.fever_left > 0: return
+	_turn_wait -= delta
+	if _turn_wait <= 0:
+		_turn_wait = randf_range(4.0, 8.0)
+		if absf(position.x) < 2.5 and randf() < 0.6: direction *= -1.0
 
 func on_target_pressed() -> void:
 	if "anginla" in species and not unsuitable and not GameManager.is_run_over():

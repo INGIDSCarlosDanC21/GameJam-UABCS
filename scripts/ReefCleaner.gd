@@ -46,8 +46,17 @@ func _physics_process(delta: float) -> void:
 			nearest = trash
 	var destination := Vector3(side * 2.4, 1.15, -3.5)
 	if nearest: destination = nearest.global_position
+	_animate_heading(destination - global_position, delta)
 	global_position = global_position.move_toward(destination, [0.75, 1.15, 1.65][quality - 1] * delta)
 	if nearest and distance < 0.3 and cooldown <= 0:
 		if nearest.collect_by_robot(): cooldown = [3.0, 1.4, 0.65][quality - 1]
 	elif not nearest and global_position.distance_to(destination) < 0.1:
 		side *= -1
+
+func _animate_heading(travel: Vector3, delta: float) -> void:
+	if absf(travel.x) > 0.04:
+		var yaw := 0.0 if travel.x >= 0 else PI
+		_sprite.rotation.y = lerp_angle(_sprite.rotation.y, yaw, 1.0 - exp(-delta * 4.5))
+	var bank := clampf(travel.y * 0.22, -0.20, 0.20) + sin(age * 3.0) * 0.045
+	_sprite.rotation.z = lerp_angle(_sprite.rotation.z, bank, 1.0 - exp(-delta * 4.0))
+	_sprite.position.y = sin(age * 2.2) * 0.025

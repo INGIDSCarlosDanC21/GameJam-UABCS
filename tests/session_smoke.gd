@@ -36,6 +36,7 @@ func run() -> void:
 			if material is StandardMaterial3D and material.resource_name == "Glass":
 				glass_checked = material.albedo_color.a < 0.08
 	check(glass_checked, "cabin glass preserves visibility of ocean and HUD")
+	check(main.has_node("WindowWaterLight") and main.get_node("WindowWaterLight") in session._lights, "window light follows ocean lighting lifecycle")
 	var left = main.get_node("XROrigin3D/LeftController")
 	var right = main.get_node("XROrigin3D/RightController")
 	check(left.has_method("activate_target") and not left.desktop_enabled, "left pointer is independent and does not duplicate mouse")
@@ -70,6 +71,12 @@ func run() -> void:
 	check(gm.fish_stats(0,1,3).reward > gm.fish_stats(0,1,0).reward, "gold aura raises reward")
 	seed(70)
 	var shallow = entity(main,0,"pez azul",Vector3(0,1.5,-3))
+	shallow._animate_swimming(0.1)
+	check(shallow._material.get_shader_parameter("bend_strength") > 0, "living fish bend their body")
+	shallow.direction *= -1
+	var old_yaw: float = shallow._sprite.rotation.y
+	shallow._animate_swimming(0.05)
+	check(absf(angle_difference(old_yaw, shallow._sprite.rotation.y)) > 0.05 and absf(angle_difference(old_yaw, shallow._sprite.rotation.y)) < 1.0, "fish turn visually over time")
 	gm.depth = 3
 	seed(70)
 	var deep = entity(main,0,"pez azul",Vector3(0,1.5,-3))
@@ -97,6 +104,8 @@ func run() -> void:
 	var trash = entity(main, 1, "lata", fish.position)
 	session._contamination()
 	check(fish.unsuitable and fish.collision_layer == 0, "trash contact disables fish")
+	fish._animate_swimming(0.1)
+	check(fish._material.get_shader_parameter("bend_strength") == 0.0, "unsuitable fish stop swimming deformation")
 	check(fish.get_node("Sprite3D").texture.resource_path.ends_with("pez azul noapto.png"), "matching unsuitable sprite")
 	var oracle = entity(main, 0, "pez oracles", Vector3(1, 1.5, -3.5))
 	oracle.on_click()
@@ -119,6 +128,8 @@ func run() -> void:
 	gm.coins = 200
 	check(gm.buy_filter() and gm.active_cleaners == 1, "filter purchase creates cleaner")
 	var robot = get_nodes_in_group("cleaners")[0]
+	robot._animate_heading(Vector3.LEFT, 0.05)
+	check(absf(robot._sprite.rotation.y) > 0.05 and absf(robot._sprite.rotation.y) < 1.0, "robot turns gradually instead of flipping instantly")
 	trash = entity(main, 1, "lata", robot.position)
 	var coins: int = gm.coins
 	robot._physics_process(0.01)
@@ -138,6 +149,27 @@ func run() -> void:
 	gm._process(5.1)
 	puff._physics_process(5.1)
 	check(gm.stun_left == 0 and puff.leaving, "puffer leaves after stun")
+	var arrivals: Array[Node3D] = []
+	var spaced := true
+	for index in 10:
+		var arrival := Area3D.new()
+		arrival.set_script(load("res://scripts/Hostile.gd"))
+		arrival.snail = true
+		main.add_child(arrival)
+		arrival.set_physics_process(false)
+		for other in arrivals:
+			if arrival._settle_target.distance_to(other._settle_target) < 0.16: spaced = false
+		arrivals.append(arrival)
+	check(spaced, "ten snails reserve distinct destinations")
+	check(arrivals[0]._offset.y < -0.6, "snails enter below the view")
+	var entry_y: float = arrivals[0]._offset.y
+	arrivals[0]._physics_process(0.1)
+	check(arrivals[0]._offset.y > entry_y and arrivals[0]._offset.y < entry_y + 0.03, "snail arrival crawls rather than teleporting")
+	for arrival in arrivals:
+		arrival._physics_process(15.0)
+		check(arrival._offset.distance_to(arrival._settle_target) < 0.003, "snail settles at reserved position")
+		arrival.queue_free()
+	await process_frame
 	var snail := Area3D.new()
 	snail.set_script(load("res://scripts/Hostile.gd"))
 	snail.snail = true

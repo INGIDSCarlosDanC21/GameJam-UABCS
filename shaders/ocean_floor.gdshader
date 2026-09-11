@@ -1,8 +1,12 @@
 shader_type spatial;
+#include "res://shaders/water_motion.gdshaderinc"
 uniform float depth_level = 0.0;
 uniform float ecosystem_light = 1.0;
 varying vec3 world;
-void vertex() { world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz; }
+void vertex() {
+ world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+ VERTEX += (inverse(MODEL_MATRIX) * vec4(underwater_warp(world, TIME), 0.0)).xyz;
+}
 void fragment() {
 	vec2 p = world.xz;
 	float sand = sin(p.x * 28.0 + sin(p.y * 3.0)) * 0.025;

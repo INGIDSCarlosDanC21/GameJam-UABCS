@@ -10,6 +10,18 @@
 
 ## Ajustes
 
+### Movimiento de sprites y agua
+
+- **Peces:** `Body Bend` en `InteractableEntity.gd` controla cuánto se dobla el dibujo (0 lo desactiva). El shader ondula las coordenadas de la textura y conserva su contorno; no necesita nuevos PNG ni frames. La cola se mueve más que la cabeza. La anguila tiene mayor flexibilidad. Los giros ocasionales, inclinación y animación siguen el tiempo del juego; al quedar no aptos se detiene la ondulación del cuerpo. La fiebre conserva el avance rápido sin nuevos cambios aleatorios de rumbo.
+- **Robots:** `ReefCleaner.gd` interpola el giro horizontal hacia su destino, inclina el sprite al subir/bajar y añade un balanceo pequeño. La calidad, limpieza y duración de 60 segundos siguen funcionando.
+- **Caracoles:** entran por debajo de la vista y suben a 0.18 m/s. Reservan posiciones separadas en 15 lugares posibles para el máximo actual de 10 hostiles. Si se suelta uno dentro del área, vuelve hacia un lugar libre. Los que comparten columna entran con separación vertical. La retirada por arrastre sigue funcionando durante la llegada.
+- **Agua exterior:** `water_motion.gdshaderinc` desplaza ligeramente la geometría exterior (hasta 1.2 cm por eje), con intensidad gradual detrás de la ventana. Es una aproximación estilizada de ondulación, no refracción óptica de toda la escena. No usa textura de pantalla y no deforma la UI, la cabina ni los caracoles. El colisionador del pez permanece estable, con su margen de captura existente.
+- **Interior:** se reduce el sol y se añade `WindowWaterLight`, un foco azul suave hacia el interior. El material gris del submarino y el marco reciben reflejos animados de agua. Los reflejos bajan con salud/profundidad y se apagan durante el bloqueo del pez globo. Las luces siguen el sistema existente de derrota y fiebre. El GLB original no se modifica.
+
+La distorsión exterior es deliberadamente leve para no desalinear la captura. Estos efectos se han ejecutado en PC; la comodidad y coste final se deben comprobar físicamente en Quest.
+
+Referencia técnica: [shaders espaciales de Godot](https://docs.godotengine.org/en/stable/tutorials/shaders/shader_reference/spatial_shader.html).
+
 La densidad y distribución del arrecife están en `scripts/OceanWorld.gd`. Los materiales están en `shaders/reef_rock.gdshader`, `reef_coral.gdshader`, `kelp.gdshader`, `ocean_floor.gdshader` y `water_surface.gdshader`.
 
 El color base de cada cursor se ajusta con **Pointer Color** en los controladores de `Main.tscn`. La transparencia del cristal se ajusta en la rama `Glass` de `scripts/CartoonStyle.gd`.
