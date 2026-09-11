@@ -3,9 +3,16 @@ extends Node3D
 var _materials: Array[ShaderMaterial] = []
 var _depth := 0.0
 var _surface: MeshInstance3D
+var _descent_left := 0.0
+var _descent_travel := 0.0
+var _settled_travel := 0.0
 
 func _ready() -> void:
 	name = "OceanWorld"
+	GameManager.depth_changed.connect(func(_value: int):
+		_descent_left = 3.5
+		_settled_travel = position.y
+	)
 	var sand := _material(preload("res://shaders/ocean_floor.gdshader"))
 	var terrain := SurfaceTool.new()
 	terrain.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -98,6 +105,12 @@ func _mesh(mesh: Mesh, material: Material, at: Vector3) -> MeshInstance3D:
 	return instance
 
 func _process(delta: float) -> void:
+	if _descent_left > 0:
+		_descent_left = maxf(0.0, _descent_left - delta)
+		var fraction := 1.0 - _descent_left / 3.5
+		# Exterior rises past the stationary headset as the cabin descends.
+		_descent_travel = lerpf(_settled_travel, minf(0.75, GameManager.depth * 0.15), smoothstep(0.0, 1.0, fraction))
+		position.y = _descent_travel
 	_depth = lerpf(_depth, float(GameManager.depth), 1.0 - exp(-delta))
 	_surface.position.y = 7.0 + _depth * 4.0
 	for material in _materials:

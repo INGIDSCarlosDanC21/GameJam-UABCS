@@ -16,6 +16,7 @@ func entity(main: Node, kind: int, name_text: String, at: Vector3) -> Node3D:
 	e.set_physics_process(false)
 	return e
 func run() -> void:
+	root.get_node("GameManager").select_mode(0)
 	var main = load("res://scenes/Main.tscn").instantiate()
 	root.add_child(main)
 	current_scene = main

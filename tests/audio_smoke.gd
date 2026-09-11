@@ -8,6 +8,7 @@ func check(value: bool, label: String) -> void:
 func _initialize() -> void:
 	call_deferred("run")
 func run() -> void:
+	root.get_node("GameManager").select_mode(0)
 	var main = load("res://scenes/Main.tscn").instantiate()
 	root.add_child(main)
 	current_scene = main

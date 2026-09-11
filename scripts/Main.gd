@@ -13,6 +13,10 @@ func _ready() -> void:
 	GameManager.coins_changed.connect(_refresh_hud)
 	GameManager.ocean_health_changed.connect(_on_health)
 	_refresh_hud(GameManager.coins)
+	if not GameManager.mode_selected:
+		var menu := Node3D.new()
+		menu.set_script(preload("res://scripts/ModeMenu.gd"))
+		add_child(menu)
 
 
 func _setup_xr() -> void:
