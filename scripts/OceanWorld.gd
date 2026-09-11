@@ -25,28 +25,59 @@ func _ready() -> void:
 	_surface = _mesh(surface, _material(preload("res://shaders/water_surface.gdshader")), Vector3(0, 7, -16))
 	var random := RandomNumberGenerator.new()
 	random.seed = 718
-	var stone := StandardMaterial3D.new()
-	stone.albedo_color = Color("637e78")
-	stone.roughness = 0.95
-	for index in 30:
+	var stone := _material(preload("res://shaders/reef_rock.gdshader"))
+	var rock := SphereMesh.new()
+	rock.radial_segments = 12
+	rock.rings = 6
+	var rocks := _batch("ReefRocks", rock, stone, 48)
+	for index in 48:
 		var at := Vector3(random.randf_range(-18, 18), 0, random.randf_range(-30, -7))
 		at.y = _height(at.x, at.z)
-		var rock := SphereMesh.new()
-		rock.radial_segments = 10
-		rock.rings = 5
-		var instance := _mesh(rock, stone, at)
-		instance.scale = Vector3(random.randf_range(1, 3), random.randf_range(0.5, 2), random.randf_range(1, 2.5))
-		instance.rotation = Vector3(random.randf(), random.randf() * TAU, random.randf())
+		var size := Vector3(random.randf_range(1, 3), random.randf_range(0.5, 2), random.randf_range(1, 2.5))
+		var basis := Basis.from_euler(Vector3(random.randf(), random.randf() * TAU, random.randf())).scaled(size)
+		rocks.set_instance_transform(index, Transform3D(basis, at))
 	var kelp := _material(preload("res://shaders/kelp.gdshader"))
 	var blade := PlaneMesh.new()
 	blade.orientation = PlaneMesh.FACE_Z
 	blade.size = Vector2(0.32, 2.0)
 	blade.subdivide_depth = 8
-	for index in (35 if OS.has_feature("android") else 70):
+	var plant_count := 100 if OS.has_feature("android") else 220
+	var plants := _batch("KelpGarden", blade, kelp, plant_count)
+	for index in plant_count:
 		var at := Vector3(random.randf_range(-12, 12), 0, random.randf_range(-24, -7))
-		at.y = _height(at.x, at.z) + 0.9
-		var plant := _mesh(blade, kelp, at)
-		plant.rotation.y = random.randf() * PI
+		var height := random.randf_range(0.5, 1.6)
+		at.y = _height(at.x, at.z) + height
+		var basis := Basis(Vector3.UP, random.randf() * TAU).scaled(Vector3(1, height, 1))
+		plants.set_instance_transform(index, Transform3D(basis, at))
+	# Low silhouettes frame the seabed, leaving the gameplay lanes unobstructed.
+	var coral := CylinderMesh.new()
+	coral.top_radius = 0.04
+	coral.bottom_radius = 0.12
+	coral.height = 0.65
+	coral.radial_segments = 6
+	var coral_material := _material(preload("res://shaders/reef_coral.gdshader"))
+	var branches := _batch("CoralGarden", coral, coral_material, 90)
+	for index in 90:
+		var cluster := index / 9
+		var x := sin(float(cluster) * 7.0) * 11.0 + random.randf_range(-0.5, 0.5)
+		var z := -8.0 - float(cluster) * 1.7 + random.randf_range(-0.5, 0.5)
+		var at := Vector3(x, _height(x, z) + 0.25, z)
+		var basis := Basis.from_euler(Vector3(random.randf_range(-0.6, 0.6), random.randf() * TAU, random.randf_range(-0.6, 0.6)))
+		branches.set_instance_transform(index, Transform3D(basis, at))
+
+func _batch(label: String, mesh: Mesh, material: Material, count: int) -> MultiMesh:
+	var data := MultiMesh.new()
+	data.transform_format = MultiMesh.TRANSFORM_3D
+	data.mesh = mesh
+	data.instance_count = count
+	var instance := MultiMeshInstance3D.new()
+	instance.name = label
+	instance.multimesh = data
+	instance.material_override = material
+	instance.extra_cull_margin = 0.5
+	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(instance)
+	return data
 
 func _height(x: float, z: float) -> float:
 	return -1.4 + sin(x * 0.24) * 0.45 + cos(z * 0.32 + x * 0.11) * 0.35
@@ -71,3 +102,4 @@ func _process(delta: float) -> void:
 	_surface.position.y = 7.0 + _depth * 4.0
 	for material in _materials:
 		material.set_shader_parameter("depth_level", _depth)
+		material.set_shader_parameter("ecosystem_light", maxf(0.02, pow(GameManager.ocean_health / 100.0, 2.0)))

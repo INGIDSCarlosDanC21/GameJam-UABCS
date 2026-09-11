@@ -29,6 +29,13 @@ func run() -> void:
 	var gm = root.get_node("GameManager")
 	check(main.get_node("Cabin/ShopFilter").get_parent() == main.get_node("Cabin"), "shop remains fixed in cabin")
 	var session = main.get_node("OceanSession")
+	var glass_checked := false
+	for mesh in main.get_node("Sketchfab_Scene").find_children("*", "MeshInstance3D", true, false):
+		for index in mesh.mesh.get_surface_count():
+			var material = mesh.get_active_material(index)
+			if material is StandardMaterial3D and material.resource_name == "Glass":
+				glass_checked = material.albedo_color.a < 0.08
+	check(glass_checked, "cabin glass preserves visibility of ocean and HUD")
 	var left = main.get_node("XROrigin3D/LeftController")
 	var right = main.get_node("XROrigin3D/RightController")
 	check(left.has_method("activate_target") and not left.desktop_enabled, "left pointer is independent and does not duplicate mouse")
@@ -43,7 +50,18 @@ func run() -> void:
 	left._set_hover(shop, false)
 	check(shop._hover, "hover persists while the other pointer remains")
 	right._set_hover(shop, false)
-	check(main.has_node("OceanWorld") and main.get_node("OceanWorld").get_child_count() > 30, "ocean contains real terrain water and vegetation")
+	var ocean = main.get_node("OceanWorld")
+	check(ocean.has_node("ReefRocks") and ocean.has_node("KelpGarden") and ocean.has_node("CoralGarden"), "ocean has batched reef geometry")
+	check(ocean.get_child_count() == 5, "dense reef uses five geometry nodes")
+	right._held = true
+	right._progress = 0.5
+	right._grip_ratio = 0.5
+	right._process(0.01)
+	check(right._capture_ring.visible_instance_count == 12, "capture ring displays partial progress")
+	right._clear_target()
+	right._held = false
+	right._process(0.01)
+	check(right._capture_ring.visible_instance_count == 0 and not right._grip_bar.visible, "interrupted capture clears visual progress")
 	session._depth_announcement(1)
 	session._update_descent(0.4)
 	check(session._descent_left > 0 and session._rumble.playing, "descent starts timed movement and sound")

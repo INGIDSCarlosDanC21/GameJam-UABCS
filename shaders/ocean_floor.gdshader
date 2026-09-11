@@ -1,5 +1,6 @@
 shader_type spatial;
 uniform float depth_level = 0.0;
+uniform float ecosystem_light = 1.0;
 varying vec3 world;
 void vertex() { world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz; }
 void fragment() {
@@ -9,6 +10,6 @@ void fragment() {
 	float b = sin(p.y * 3.3 + sin(p.x * 1.7 - TIME * 0.5));
 	float caustic = pow(1.0 - abs(a * b), 18.0) * exp(-depth_level * 0.5);
 	ALBEDO = mix(vec3(0.22, 0.36, 0.32), vec3(0.035, 0.09, 0.12), clamp(depth_level / 6.0, 0.0, 1.0)) + sand;
-	EMISSION = vec3(0.13, 0.35, 0.29) * caustic * 0.45;
+	EMISSION = vec3(0.13, 0.35, 0.29) * caustic * 0.45 * ecosystem_light;
 	ROUGHNESS = 0.95;
 }

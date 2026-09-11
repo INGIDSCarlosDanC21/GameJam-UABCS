@@ -29,6 +29,17 @@ func _style(node: Node) -> void:
 	if node is MeshInstance3D and node.mesh:
 		for i in range(node.mesh.get_surface_count()):
 			var source: Material = node.get_active_material(i)
+			if source is StandardMaterial3D and source.resource_name == "Glass":
+				# Imported black glass had 88% opacity, hiding the ocean and HUD.
+				var glass := source.duplicate() as StandardMaterial3D
+				glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+				glass.albedo_color = Color(0.22, 0.52, 0.60, 0.035)
+				glass.albedo_texture = null
+				glass.roughness = 0.18
+				glass.metallic = 0.0
+				glass.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+				node.set_surface_override_material(i, glass)
+				continue
 			if source is StandardMaterial3D and source.transparency == BaseMaterial3D.TRANSPARENCY_DISABLED:
 				var mat := ShaderMaterial.new()
 				mat.shader = preload("res://shaders/submarine_gray.gdshader")

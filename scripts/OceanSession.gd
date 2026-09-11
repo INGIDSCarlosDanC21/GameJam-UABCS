@@ -122,7 +122,6 @@ func _process(delta: float) -> void:
 	_update_descent(delta)
 	var world_delta := delta * GameManager.world_time_scale()
 	_pulse += delta
-	_screen.visible = not GameManager.defeated and (GameManager.fever_left > 0 or GameManager.stun_left > 0)
 	_screen_mat.set_shader_parameter("fever", 1.0 if GameManager.fever_left > 0 else 0.0)
 	_screen_mat.set_shader_parameter("stun", 1.0 if GameManager.stun_left > 0 else 0.0)
 	_hostile_timer -= world_delta
@@ -135,6 +134,7 @@ func _process(delta: float) -> void:
 			add_child(hostile)
 	var alive := not GameManager.is_run_over()
 	var fever := GameManager.fever_left > 0 and alive
+	_screen.visible = fever or GameManager.stun_left > 0
 	var health := GameManager.ocean_health / 100.0
 	_depth_visual = lerpf(_depth_visual, float(GameManager.depth), 1.0 - exp(-delta))
 	var illumination := maxf(0.018, health * health) * pow(0.75, _depth_visual)

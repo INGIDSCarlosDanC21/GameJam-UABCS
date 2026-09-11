@@ -45,6 +45,6 @@ renderer/rendering_method.windows="forward_plus"
 
 openxr/enabled=true
 openxr/extensions/hand_tracking=true
-openxr/extensions/hand_interaction_profile=true
 openxr/extensions/hand_tracking_unobstructed_data_source=true
+openxr/extensions/hand_interaction_profile=true
 shaders/enabled=true

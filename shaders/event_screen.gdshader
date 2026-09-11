@@ -1,6 +1,6 @@
 shader_type spatial;
 render_mode unshaded, cull_disabled, depth_test_disabled;
-uniform sampler2D screen_texture : hint_screen_texture, filter_linear;
+uniform sampler2D screen_texture : hint_screen_texture, source_color, filter_linear;
 uniform float fever = 0.0;
 uniform float stun = 0.0;
 void fragment() {
