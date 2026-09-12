@@ -115,7 +115,10 @@ func _swimmer(packed: PackedScene, length: float, center: Vector3, radius: Vecto
 				player.seek(_rng.randf() * animation.length, true)
 				player.speed_scale = _rng.randf_range(0.8, 1.15)
 				break
-	_swimmers.append({"node": pivot, "center": center, "radius": radius, "phase": phase, "speed": speed})
+	# Imported Quaternius models face +Z, opposite Godot's camera-forward axis.
+	model.rotation.y = PI
+	model.position = Basis(Vector3.UP, PI) * model.position
+	_swimmers.append({"node": pivot, "center": center, "radius": radius, "phase": phase, "speed": speed, "pattern": _swimmers.size() % 3, "direction": -1.0 if _swimmers.size() % 2 == 0 else 1.0})
 
 func _process(delta: float) -> void:
 	_clock += delta * GameManager.world_time_scale()
@@ -130,9 +133,11 @@ func _process(delta: float) -> void:
 func _update_swimmers(clock: float) -> void:
 	for swimmer in _swimmers:
 		var animal: Node3D = swimmer.node
-		var t: float = clock * swimmer.speed + swimmer.phase
+		var t: float = clock * swimmer.speed * swimmer.direction + swimmer.phase
 		var radius: Vector2 = swimmer.radius
-		animal.position = swimmer.center + Vector3(cos(t) * radius.x, sin(t * 2.0) * 0.32, sin(t) * radius.y)
-		var tangent := Vector3(-sin(t) * radius.x, cos(t * 2.0) * 0.64, cos(t) * radius.y).normalized()
+		var frequency := 2.0 if swimmer.pattern == 1 else 1.0
+		var rise := 0.65 if swimmer.pattern == 2 else 0.32
+		animal.position = swimmer.center + Vector3(cos(t) * radius.x, sin(t * 2.0) * rise, sin(t * frequency) * radius.y)
+		var tangent := (Vector3(-sin(t) * radius.x, cos(t * 2.0) * rise * 2.0, cos(t * frequency) * radius.y * frequency) * float(swimmer.direction)).normalized()
 		animal.basis = Basis.looking_at(tangent, Vector3.UP)
 		animal.rotate_object_local(Vector3.FORWARD, sin(t) * 0.075)

@@ -6,12 +6,16 @@ var _depth := 0.0
 var _descent_left := 0.0
 var _descent_travel := 0.0
 var _settled_travel := 0.0
+var _forward_start := 0.0
+var _basalt: MultiMesh
+var _basalt_poses: Array[Transform3D] = []
 
 func _ready() -> void:
 	name = "OceanWorld"
 	GameManager.depth_changed.connect(func(_value: int):
 		_descent_left = 3.5
 		_settled_travel = position.y
+		_forward_start = position.z
 	)
 	var sand := _material(preload("res://shaders/ocean_floor.gdshader"))
 	var terrain := SurfaceTool.new()
@@ -46,6 +50,18 @@ func _ready() -> void:
 			size = Vector3(random.randf_range(5, 10), random.randf_range(3, 6), random.randf_range(4, 7))
 		var basis := Basis.from_euler(Vector3(random.randf(), random.randf() * TAU, random.randf())).scaled(size)
 		rocks.set_instance_transform(index, Transform3D(basis, at))
+	var column := CylinderMesh.new()
+	column.top_radius = 0.45
+	column.bottom_radius = 0.8
+	column.height = 1.0
+	column.radial_segments = 6
+	_basalt = _batch("DeepBasalt", column, stone, 24)
+	for index in 24:
+		var x := (-1.0 if index % 2 == 0 else 1.0) * random.randf_range(6, 17)
+		var z := random.randf_range(-26, -11)
+		var size := Vector3(random.randf_range(0.7,1.5), random.randf_range(3,7), 1.0)
+		_basalt_poses.append(Transform3D(Basis(Vector3.UP, random.randf() * TAU).scaled(size), Vector3(x, _height(x,z), z)))
+		_basalt.set_instance_transform(index, Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * 0.001), Vector3(x,-5,z)))
 	var life := Node3D.new()
 	life.set_script(preload("res://scripts/ReefLife.gd"))
 	add_child(life)
@@ -89,7 +105,14 @@ func _process(delta: float) -> void:
 		# Exterior rises past the stationary headset as the cabin descends.
 		_descent_travel = lerpf(_settled_travel, minf(0.75, GameManager.depth * 0.15), smoothstep(0.0, 1.0, fraction))
 		position.y = _descent_travel
+		position.z = lerpf(_forward_start, minf(2.5, GameManager.depth * 0.4), smoothstep(0.0, 1.0, fraction))
 	_depth = lerpf(_depth, float(GameManager.depth), 1.0 - exp(-delta))
+	var emergence := smoothstep(1.0, 3.0, _depth)
+	for index in _basalt_poses.size():
+		var pose := _basalt_poses[index]
+		pose.basis = pose.basis.scaled(Vector3(1, maxf(0.001, emergence), 1))
+		pose.origin.y += pose.basis.y.length() * 0.5 - (1.0 - emergence)
+		_basalt.set_instance_transform(index, pose)
 
 	for material in _materials:
 		material.set_shader_parameter("depth_level", _depth)

@@ -1,5 +1,5 @@
 extends Area3D
-enum Item { BAIT, FILTER, DESCEND, RESTART }
+enum Item { BAIT, FILTER, DESCEND, RESTART, NET }
 @export var button_texture: Texture2D
 @export var filter_icons: Array[Texture2D]
 @export var item: Item = Item.BAIT
@@ -12,10 +12,13 @@ var _art: Sprite3D
 var _visual: MeshInstance3D
 
 func _ready() -> void:
-	position = Vector3(-0.22 if item == Item.BAIT else 0.22, 0.82, -1.45)
+	position = Vector3(-0.42 if item == Item.BAIT else 0.42, 0.82, -1.45)
+	if item == Item.NET:
+		position.x = 0.0
+		button_texture = preload("res://assets/ui/net.svg")
 	if item == Item.DESCEND: position = Vector3(0, 1.05, -1.7)
 	if item == Item.RESTART: position = Vector3(0, 1.75, -2.0)
-	if item == Item.BAIT or item == Item.FILTER:
+	if item in [Item.BAIT, Item.FILTER, Item.NET]:
 		add_to_group("shop_items")
 	_label.position = Vector3.ZERO
 	$CollisionShape3D.position = Vector3.ZERO
@@ -52,6 +55,9 @@ func _ready() -> void:
 	_label.pixel_size = 0.0012
 	_label.outline_size = 3
 	_label.modulate = Color("f2f8ff")
+	if item == Item.DESCEND:
+		_label.font_size = 76
+		_label.pixel_size = 0.0018
 	if item == Item.RESTART:
 		_label.font_size = 26
 		_label.pixel_size = 0.0012
@@ -81,22 +87,26 @@ func on_click() -> void:
 	if item == Item.DESCEND:
 		GameManager.descend()
 		return
-	_accepted = GameManager.buy_bait() if item == Item.BAIT else GameManager.buy_filter()
+	_accepted = GameManager.buy_net() if item == Item.NET else (GameManager.buy_bait() if item == Item.BAIT else GameManager.buy_filter())
 	GameManager.sound_requested.emit("success" if _accepted else "error")
 	_feedback = 0.8
 	_refresh(GameManager.coins)
 
 func _refresh(coins: int) -> void:
-	if item >= Item.DESCEND:
+	if item in [Item.DESCEND, Item.RESTART]:
 		if _label.text.is_empty():
 			_label.text = "DESCENDER\nCada 5 niveles" if item == Item.DESCEND else "OCÉANO AGOTADO\nREINICIAR PARTIDA"
 		_panel.albedo_color = Color("286d82") if _hover else Color("102d43")
 		return
 	var price := GameManager.BAIT_COST if item == Item.BAIT else GameManager.filter_cost()
+	if item == Item.NET: price = GameManager.net_cost()
 	var title := "CEBO" if item == Item.BAIT else "FILTROBOT"
 	var level := GameManager.bait_level if item == Item.BAIT else GameManager.cleaner_quality()
-	var description := "+ Peces y recompensa" if item == Item.BAIT else "Filtro + robot (60 s)"
-	_label.text = "%s  /  NIVEL %d\n%s\n%d MONEDAS" % [title, level, description, price]
+	if item == Item.NET:
+		title = "RED"
+		level = GameManager.net_level
+	_label.text = "%s %d · $%d" % [title, level, price]
+	if item == Item.NET and level == GameManager.MAX_NET_LEVEL: _label.text = "RED 5 · MAX"
 	if is_instance_valid(_art):
 		var icon := button_texture
 		if item == Item.FILTER and not filter_icons.is_empty():

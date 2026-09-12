@@ -52,11 +52,23 @@ func run() -> void:
 	check(safe, "five minutes of paths stay finite and behind the gameplay lanes")
 	check(smooth, "path positions and heading evolve without boundary teleports")
 	check(node_count == life.get_child_count(), "population stays bounded across repeated circuits")
+	var patterns := {}
+	var facing := true
+	for swimmer in life._swimmers:
+		patterns[swimmer.pattern] = true
+		var animal: Node3D = swimmer.node
+		var start := animal.position
+		life._update_swimmers(299.766 + 0.01)
+		var velocity := animal.position - start
+		if velocity.length() > 0.0001: facing = facing and (-animal.basis.z).dot(velocity.normalized()) > 0.98
+		life._update_swimmers(299.766)
+	check(patterns.size() == 3 and facing, "three trajectory patterns face along their travel")
 	gm.depth = 4
 	gm.depth_changed.emit(4)
 	await create_timer(4.0).timeout
 	await capture("deep")
 	check(life._materials[0].get_shader_parameter("depth_level") == 4.0, "reef shading follows descent")
+	check(ocean._basalt.get_instance_transform(0).basis.y.length() > 2.0, "deep scenario reveals basalt formations")
 	gm._set_health(15)
 	await create_timer(1.5).timeout
 	check(life._materials[0].get_shader_parameter("ecosystem_light") < 0.03, "plant emission fades with ecosystem failure")

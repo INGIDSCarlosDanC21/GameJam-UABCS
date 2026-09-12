@@ -35,6 +35,9 @@ func _ready() -> void:
 	GameManager.depth_changed.connect(_depth_announcement)
 	GameManager.level_changed.connect(_upgrade_cleaners)
 	var camera := get_parent().get_node("XROrigin3D/XRCamera3D")
+	var curtain := MultiMeshInstance3D.new()
+	curtain.set_script(preload("res://scripts/DescentCurtain.gd"))
+	add_child(curtain)
 	_camera = camera
 	_submarine = get_parent().get_node("Sketchfab_Scene")
 	_submarine_rest = _submarine.transform
@@ -56,6 +59,8 @@ func _ready() -> void:
 	_screen.material_override = _screen_mat
 	camera.add_child.call_deferred(_screen)
 	_descend = _button(2)
+	var net := _button(4)
+	net.name = "ShopNet"
 	_descend.hide()
 	_descend.collision_layer = 0
 	_restart = _button(3)
@@ -166,9 +171,9 @@ func _process(delta: float) -> void:
 		GameManager.sound_requested.emit("alarm")
 	if alive:
 		var seconds := ceili(GameManager.expedition_left)
-		_mission.text = GameManager.mission_text() if GameManager.play_mode == GameManager.PlayMode.ARCADE else "%02d:%02d  ·  %s" % [seconds / 60, seconds % 60, GameManager.mission_text()]
-		var event_text := "TIEMPO LENTO  %.1f s" % GameManager.slow_time_left if GameManager.slow_time_left > 0 else ("¡FIEBRE DE PECES! x2  %.1f s" % GameManager.fever_left if fever else "Progreso %d/6" % GameManager.experience)
-		_status.text = "NIVEL %d  /  %d MONEDAS\nOCÉANO %d%%  |  PROFUNDIDAD %d\n%s" % [GameManager.level, GameManager.coins, int(GameManager.ocean_health), GameManager.depth, event_text]
+		_mission.text = "" if GameManager.play_mode == GameManager.PlayMode.ARCADE else "%02d:%02d  ·  %s" % [seconds / 60, seconds % 60, GameManager.mission_text()]
+		var event_text := "◷ %.1f s" % GameManager.slow_time_left if GameManager.slow_time_left > 0 else ("×2  %.1f s" % GameManager.fever_left if fever else "%d/6" % GameManager.experience)
+		_status.text = "Nv %d  ·  $%d  ·  ♥ %d%%  ·  ↓%d\n%s" % [GameManager.level, GameManager.coins, int(GameManager.ocean_health), GameManager.depth, event_text]
 	_check -= delta
 	if alive and _check <= 0:
 		_check = 0.2
@@ -217,7 +222,7 @@ func _depth_announcement(value: int) -> void:
 		_bubbles(Vector3(-1.2 + index * 0.6, 1.0, -2.2))
 	_descend.show()
 	_descend.collision_layer = 0
-	_descend.get_node("Label3D").text = "PROFUNDIDAD %d\nDESCENSO AUTOMÁTICO" % value
+	_descend.get_node("Label3D").text = "↓ %d" % value
 	_descend._panel.albedo_color = Color("8d1924")
 	var timer := get_tree().create_timer(_descent_duration)
 	timer.timeout.connect(func():
@@ -304,13 +309,13 @@ func _update_descent(delta: float) -> void:
 	_descent_pulse -= delta
 	if _descent_left > 0 and _descent_pulse <= 0:
 		_descent_pulse = 0.28
-		for pointer in get_tree().get_nodes_in_group("xr_pointers"): pointer.pulse(0.4 * strength, 0.12)
+		for pointer in get_tree().get_nodes_in_group("xr_pointers"): pointer.pulse(0.75 + 0.25 * strength, 0.20)
 		_bubbles(Vector3(randf_range(-1.6, 1.6), 0.7, -2.3))
 	if not get_viewport().use_xr:
 		_camera.h_offset = sin(_pulse * 37.0) * 0.006 * strength
 		_camera.v_offset = sin(_pulse * 43.0) * 0.004 * strength
 	if _descent_left > 0:
-		_descend.get_node("Label3D").text = "DESCENDIENDO\nPROFUNDIDAD %d" % GameManager.depth
+		_descend.get_node("Label3D").text = "↓ %d" % GameManager.depth
 
 func _descent_audio() -> AudioStreamWAV:
 	var audio := AudioStreamWAV.new()

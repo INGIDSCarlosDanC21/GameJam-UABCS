@@ -5,7 +5,7 @@ extends XRController3D
 @export var max_speed: float = 7.0
 @export var desktop_enabled := true
 @export var pointer_color := Color("7bffdf")
-@export_range(0.0, 1.0) var haptic_strength := 0.5
+@export_range(0.0, 1.0) var haptic_strength := 1.0
 var _hovering: Node3D
 @onready var _ray: RayCast3D = $RayCast3D
 @onready var _camera: Camera3D = get_parent().get_node("XRCamera3D")
@@ -30,10 +30,13 @@ var _capture_ring: MultiMesh
 var _cursor_material: StandardMaterial3D
 var _activation_flash := 0.0
 var _activation_color := Color.WHITE
+var _haptic_until := 0
+var _haptic_amplitude := 0.0
 
 func _ready() -> void:
 	add_to_group("xr_pointers")
-	GameManager.depth_changed.connect(func(_depth: int): pulse(0.6, 0.3))
+	GameManager.depth_changed.connect(func(_depth: int): pulse(1.0, 0.45))
+	GameManager.level_changed.connect(func(_level: int): pulse(0.9, 0.22))
 	button_pressed.connect(_pressed)
 	button_released.connect(_released)
 	$LaserBeam.hide()
@@ -184,7 +187,7 @@ func _physics_process(delta: float) -> void:
 			_set_hover(_target, true)
 		if is_instance_valid(_target): pulse(0.12, 0.025)
 	if not is_instance_valid(_target) or not _target.is_in_group("interactable"):
-		_info.text = "Apunta y mantén una pinza para capturar" if _uses_hands() else "Apunta y mantén gatillo / clic para capturar"
+		_info.text = "Pinza" if _uses_hands() else "Mantén"
 		return
 	if _held and _pressed_target != _target:
 		_pressed_target = _target
@@ -193,15 +196,17 @@ func _physics_process(delta: float) -> void:
 	if _target.has_method("get_stats_text"):
 		_info.text = _target.get_stats_text()
 	else:
-		_info.text = "Mantén para elegir modo" if not GameManager.mode_selected else ("Mantén para reiniciar" if GameManager.is_run_over() else "Mantén para activar")
+		_info.text = "Mantén"
 	if not _held or not aligned or _cooldown > 0:
 		_progress = 0.0
 		return
 	var required: float = _target.capture_time if _target.has_method("get_stats_text") else 0.18
+	if _target.is_in_group("fish"):
+		required = GameManager.capture_duration(required, true)
 	if GameManager.fever_left > 0: required = 0.06
 	_progress += delta
 	_grip_ratio = clampf(_progress / required, 0, 1)
-	_info.text += "\nCapturando: %d%%" % mini(100, int(100.0 * _progress / required))
+	_info.text += "  %d%%" % mini(100, int(100.0 * _progress / required))
 	if _progress >= required:
 		GameManager.bubbles_requested.emit(point)
 		activate_target(_target)
@@ -244,6 +249,11 @@ func _set_hover(target: Node3D, active: bool) -> void:
 
 func pulse(amplitude: float, seconds: float) -> void:
 	if not get_viewport().use_xr or not get_is_active() or haptic_strength <= 0 or _uses_hands(): return
+	var now := Time.get_ticks_msec()
+	# Hover feedback must not cancel a stronger level/descent pulse.
+	if now < _haptic_until and amplitude < _haptic_amplitude: return
+	_haptic_until = now + int(seconds * 1000)
+	_haptic_amplitude = amplitude
 	trigger_haptic_pulse("haptic", 0.0, clampf(amplitude * haptic_strength, 0, 1), seconds, 0.0)
 
 func _uses_hands() -> bool:

@@ -31,6 +31,7 @@ var _notifier: VisibleOnScreenNotifier3D
 var _material: ShaderMaterial
 @export_range(0.0, 0.12) var body_bend := 0.045
 var _turn_wait := randf_range(4.0, 8.0)
+var _oracle_badge: Sprite3D
 @onready var _sprite: Sprite3D = $Sprite3D
 
 func setup(value: Kind, dir: float) -> void:
@@ -70,6 +71,12 @@ func _ready() -> void:
 	_material.shader = INK
 	_sprite.material_override = _material
 	_apply_art(_texture_path(species))
+	if "oracles" in species:
+		_oracle_badge = Sprite3D.new()
+		_oracle_badge.texture = preload("res://assets/ui/slow_clock.svg")
+		_oracle_badge.pixel_size = 0.0011
+		_oracle_badge.position = Vector3(0, 0.20, 0.04)
+		add_child(_oracle_badge)
 	if kind != Kind.TRASH: _sprite.rotation.y = 0.0 if direction > 0 else PI
 	if aura > 0:
 		_halo = MeshInstance3D.new()
@@ -204,6 +211,7 @@ func on_click() -> void:
 func make_unsuitable() -> void:
 	if unsuitable or _clicked or kind != Kind.FISH: return
 	unsuitable = true
+	if is_instance_valid(_oracle_badge): _oracle_badge.hide()
 	_exit_age = -1
 	if _local_light: _local_light.hide()
 	if "linterna" in species: GameManager.sound_requested.emit("lantern_out")
@@ -252,7 +260,7 @@ func _finish_exit() -> void:
 func get_stats_text() -> String:
 	if kind == Kind.SEAL: return "FOCA / POWER UP\nFiebre de peces: 10 segundos"
 	if kind == Kind.TRASH: return "%s / +5 monedas\nLimpia para proteger a los peces" % species.capitalize()
-	if "oracles" in species: return "PEZ ORACLE / PODER\nRalentiza el tiempo durante 5 segundos"
+	if "oracles" in species: return "◷ 5 s"
 	if "anginla" in species: return "ANGUILA / No molestar\nAl tocarla contamina peces cercanos"
 	var stats := GameManager.fish_stats(rarity, size_factor, aura)
-	return "%s | +%d monedas / -%.1f salud\n%.2f m/s | agarre %.2f s | aura %d/3" % [species.capitalize(), stats.reward, stats.damage, speed, capture_time, aura]
+	return "+$%d  ·  −%.1f%%" % [stats.reward, stats.damage]

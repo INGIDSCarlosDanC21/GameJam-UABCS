@@ -33,6 +33,21 @@ const FILTER_COST := 20
 var coins := 25
 var ocean_health := 100.0
 var bait_level := 0
+var net_level := 0
+const MAX_NET_LEVEL := 5
+
+func net_cost() -> int:
+	return 15 + net_level * 15
+
+func buy_net() -> bool:
+	if is_run_over() or net_level >= MAX_NET_LEVEL or coins < net_cost(): return false
+	coins -= net_cost()
+	net_level += 1
+	coins_changed.emit(coins)
+	return true
+
+func capture_duration(base: float, is_fish: bool) -> float:
+	return maxf(0.10, base / (1.0 + net_level * 0.45)) if is_fish else base
 var filter_level := 0
 var level := 1
 var depth := 0
@@ -129,9 +144,9 @@ func descend() -> bool:
 func clean_trash(manual: bool = true) -> void:
 	if is_run_over(): return
 	waste_removed += 1
+	progress()
 	if manual:
 		_add_coins(5)
-		progress()
 		sound_requested.emit("trash")
 	_set_health(ocean_health + (7.0 if manual else 4.0) + mini(filter_level, 3))
 
@@ -206,6 +221,7 @@ func restart() -> void:
 	coins = 25
 	ocean_health = 100
 	bait_level = 0
+	net_level = 0
 	filter_level = 0
 	level = 1
 	depth = 0

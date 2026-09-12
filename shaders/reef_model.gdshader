@@ -16,6 +16,10 @@ void vertex() {
 void fragment() {
 	vec3 texture_color = texture(color_texture, UV).rgb;
 	vec3 pigment = mix(texture_color * COLOR.rgb, COLOR.rgb * (0.6 + texture_color.r * 0.4), tint_strength);
+	float twilight = smoothstep(1.0, 3.0, depth_level);
+	float abyss = smoothstep(3.0, 6.0, depth_level);
+	pigment = mix(pigment, pigment * vec3(0.6, 0.9, 1.2), twilight);
+	pigment = mix(pigment, vec3(pigment.r * 0.8, pigment.g * 0.65, pigment.b * 1.3), abyss);
 	float depth_light = exp(-depth_level * 0.25);
 	ALBEDO = pigment;
 	float caustic = pow(1.0 - abs(sin(world.x * 2.4 + TIME * 0.45) * sin(world.z * 2.9 - TIME * 0.35)), 16.0);
