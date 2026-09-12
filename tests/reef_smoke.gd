@@ -21,14 +21,14 @@ func run() -> void:
 	main.get_node("Spawner").set_process(false)
 	var ocean = main.get_node("OceanWorld")
 	var life = ocean.get_node("ReefLife")
-	check(life._swimmers.size() == 30, "desktop has three schools, manta and two dolphins")
+	check(life._swimmers.size() == 39, "desktop has five schools, manta and three dolphins")
 	check(life.find_children("*", "CollisionObject3D", true, false).is_empty(), "scenery cannot intercept either controller or collide with gameplay")
 	var planted := 0
 	var plants: Array[Node] = life.find_children("*", "MultiMeshInstance3D", true, false)
 	for plant in plants: planted += plant.multimesh.instance_count
 	check(plants.size() > 10 and planted > 60, "multiple imported coral shapes and kelp are instanced")
 	var players: Array[Node] = life.find_children("*", "AnimationPlayer", true, false)
-	check(players.size() == 30, "all decorative animals have skeletal swimming")
+	check(players.size() == 39, "all decorative animals have skeletal swimming")
 	var looping := true
 	for player in players:
 		looping = looping and player.is_playing() and player.get_animation(player.current_animation).loop_mode == Animation.LOOP_LINEAR
@@ -68,7 +68,11 @@ func run() -> void:
 	await create_timer(4.0).timeout
 	await capture("deep")
 	check(life._materials[0].get_shader_parameter("depth_level") == 4.0, "reef shading follows descent")
-	check(ocean._basalt.get_instance_transform(0).basis.y.length() > 2.0, "deep scenario reveals basalt formations")
+	# The headless dummy renderer returns identity from MultiMesh GPU readback.
+	if DisplayServer.get_name() != "headless":
+		check(ocean._basalt.get_instance_transform(0).basis.y.length() > 2.0, "deep scenario reveals basalt formations")
+	else:
+		check(ocean._depth > 3.0 and ocean._basalt_poses[0].basis.y.length() > 2.0, "deep scenario reaches basalt emergence with full-height source geometry")
 	gm._set_health(15)
 	await create_timer(1.5).timeout
 	check(life._materials[0].get_shader_parameter("ecosystem_light") < 0.03, "plant emission fades with ecosystem failure")
@@ -80,6 +84,6 @@ func run() -> void:
 	ocean.add_child(mobile)
 	var mobile_plants := 0
 	for plant in mobile.find_children("*", "MultiMeshInstance3D", true, false): mobile_plants += plant.multimesh.instance_count
-	check(mobile._swimmers.size() == 17 and mobile_plants < planted, "Quest profile reduces fauna and vegetation")
+	check(mobile._swimmers.size() == 23 and mobile_plants < planted, "Quest profile reduces fauna and vegetation")
 	print("REEF FAILURES: ", failures)
 	quit(failures)

@@ -8,6 +8,9 @@ extends Node3D
 
 func _ready() -> void:
 	_setup_xr()
+	var snail_shake := Node.new()
+	snail_shake.set_script(preload("res://scripts/SnailShake.gd"))
+	add_child(snail_shake)
 	_setup_sky()
 	_setup_music()
 	var hands := Node.new()
@@ -38,6 +41,9 @@ func _setup_xr() -> void:
 	else:
 		$XROrigin3D/XRCamera3D.position.y = 1.6
 		viewport.use_xr = false
+		var desktop_player := Node.new()
+		desktop_player.set_script(preload("res://scripts/DesktopPlayer.gd"))
+		add_child(desktop_player)
 		print("Ocean VR: OpenXR no disponible; modo PC activo.")
 
 

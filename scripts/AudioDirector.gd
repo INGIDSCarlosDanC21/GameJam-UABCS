@@ -48,7 +48,9 @@ func _process(delta: float) -> void:
 	_mix_player(_normal, (1.0 - _blend) * gain)
 	_mix_player(_fever, _blend * gain)
 	var pitch := 0.78 if muffled else lerpf(0.90, 1.0, health)
+	if fever: pitch = 1.16
 	_normal.pitch_scale = lerpf(_normal.pitch_scale, pitch, 1.0 - exp(-delta * 2.0))
+	_fever.pitch_scale = lerpf(_fever.pitch_scale, 1.18 if fever else 1.0, 1.0 - exp(-delta * 3.0))
 	_ambience.pitch_scale = lerpf(0.8, 1.0, health)
 	_ambience.volume_db = lerpf(_ambience.volume_db, ambience_volume_db if not over else -60.0, 1.0 - exp(-delta * 2.0))
 	if _filter:

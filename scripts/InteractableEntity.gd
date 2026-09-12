@@ -1,7 +1,7 @@
 extends Area3D
 enum Kind { FISH, TRASH, SEAL }
-const FISH_ART := ["pez azul", "pez naranja", "anginla", "pez dorado millonario"]
-const TRASH_ART := ["botella rota inferiror", "botella rota superior", "lata", "monton de basura", "soporte de cerveza"]
+const FISH_ART := ["pez azul", "pez naranja", "anginla", "pez dorado millonario", "pulpo"]
+const TRASH_ART := ["botella rota inferiror", "botella rota superior", "botella", "lata", "monton de basura", "soporte de cerveza"]
 const INK = preload("res://shaders/sprite_ink.gdshader")
 static var art_cache: Dictionary = {}
 @export var kind: Kind = Kind.FISH
@@ -22,6 +22,8 @@ var _age := 0.0
 var _sink_age := 0.0
 var _base_y := 0.0
 var _base_z := 0.0
+var entry_target_z := INF
+var _entry_start_z := 0.0
 var _phase := randf() * TAU
 var _rage_timer := 0.0
 var _local_light: OmniLight3D
@@ -34,6 +36,8 @@ var _material: ShaderMaterial
 @export_enum("Aleatorio:-1", "Rayas:0", "Puntos:1", "Degradado:2", "Manchas:3") var color_pattern := -1
 var _turn_wait := randf_range(4.0, 8.0)
 var _oracle_badge: Sprite3D
+var _octopus_frame := 0
+const ENTRY_DURATION := 4.5
 @onready var _sprite: Sprite3D = $Sprite3D
 
 func _setup_color_pattern() -> void:
@@ -62,11 +66,12 @@ func _ready() -> void:
 		add_to_group("fish")
 		if species.is_empty():
 			var r := randf()
-			species = "pez oracles" if GameManager.depth > 0 and r < 0.03 else ("pez azul" if r < 0.45 else ("pez naranja" if r < 0.8 else ("anginla" if r < 0.995 else "pez dorado millonario")))
+			var bait_bias := minf(0.22, GameManager.bait_level * 0.022)
+			species = "pez oracles" if GameManager.depth > 0 and r < 0.03 else ("pez azul" if r < 0.40 - bait_bias else ("pez naranja" if r < 0.72 - bait_bias * 0.45 else ("pulpo" if r < 0.82 else ("anginla" if r < 0.995 - bait_bias else "pez dorado millonario"))))
 			if GameManager.depth > 0 and randf() < 0.15: species = "pez linterna"
 		rarity = 3 if "dorado" in species else (1 if "anginla" in species or "linterna" in species else 0)
 		size_factor = [0.9, 1.1, 1.4].pick_random() * minf(1.55, 1.0 + GameManager.depth * 0.10)
-		aura = randi_range(1, 3) if randf() < minf(0.65, 0.18 + GameManager.depth * 0.08) else 0
+		aura = randi_range(1, 3) if randf() < minf(0.75, 0.18 + GameManager.depth * 0.08 + GameManager.bait_level * 0.045) else 0
 		speed = (0.32 if "anginla" in species else 0.23) * GameManager.difficulty()
 	elif kind == Kind.TRASH:
 		add_to_group("trash")
@@ -77,21 +82,29 @@ func _ready() -> void:
 	else:
 		species = "foca"
 		speed = 0.2
+		size_factor = 1.85
 	capture_time = 0.22 + rarity * 0.035 + aura * 0.17 + maxf(0, size_factor - 1) * 0.1
 	_base_y = position.y
-	_base_z = position.z
+	_entry_start_z = position.z
+	_base_z = entry_target_z if is_finite(entry_target_z) else position.z
 	lifetime = 12.0 if kind == Kind.TRASH else 6.3 / maxf(speed, 0.1)
 	_material = ShaderMaterial.new()
 	_material.shader = INK
 	_setup_color_pattern()
 	_sprite.material_override = _material
+	if is_finite(entry_target_z):
+		_material.set_shader_parameter("fade", 0.0)
+		collision_layer = 0
 	_apply_art(_texture_path(species))
+	if "pulpo" in species:
+		_apply_art(_texture_path("pulpo nadando 1"))
 	if "oracles" in species:
 		_oracle_badge = Sprite3D.new()
 		_oracle_badge.texture = preload("res://assets/ui/slow_clock.svg")
 		_oracle_badge.pixel_size = 0.0011
 		_oracle_badge.position = Vector3(0, 0.20, 0.04)
 		add_child(_oracle_badge)
+		_oracle_badge.visible = not is_finite(entry_target_z)
 	if kind != Kind.TRASH: _sprite.rotation.y = 0.0 if direction > 0 else PI
 	if aura > 0:
 		_halo = MeshInstance3D.new()
@@ -104,6 +117,7 @@ func _ready() -> void:
 		_halo.material_override = halo_mat
 		_halo.position.z = -0.03
 		add_child(_halo)
+		_halo.visible = not is_finite(entry_target_z)
 	_notifier = VisibleOnScreenNotifier3D.new()
 	add_child(_notifier)
 	if "linterna" in species or "anginla" in species:
@@ -130,7 +144,7 @@ func _apply_art(path: String, replacement: Texture2D = null) -> void:
 	_sprite.region_enabled = true
 	var padding := maxi(5, ceili(bounds.size.y * 0.12)) if kind == Kind.FISH else 5
 	_sprite.region_rect = Rect2(bounds.grow(padding).intersection(Rect2i(Vector2i.ZERO, Vector2i(texture.get_size()))))
-	var width := (0.4 if "anginla" in species else 0.25) * size_factor
+	var width := (0.4 if "anginla" in species else (0.34 if "pulpo" in species else 0.25)) * size_factor
 	_sprite.pixel_size = width / maxi(1, bounds.size.x)
 	_sprite.flip_h = false
 	_material.set_shader_parameter("art_rect", Vector4(float(bounds.position.x) / texture.get_width(), float(bounds.position.y) / texture.get_height(), float(bounds.size.x) / texture.get_width(), float(bounds.size.y) / texture.get_height()))
@@ -146,6 +160,21 @@ func _physics_process(delta: float) -> void:
 	delta *= GameManager.world_time_scale()
 	_age += delta
 	_animate_swimming(delta)
+	# Approach before gameplay motion: bottles do not sink and fever fish do not
+	# leave the lane while still arriving. This path is shared by every species.
+	if is_finite(entry_target_z) and _age < ENTRY_DURATION and not unsuitable and _exit_age < 0:
+		var entry: float = _age / ENTRY_DURATION
+		position.z = lerpf(_entry_start_z, _base_z, sin(entry * PI * 0.5))
+		_material.set_shader_parameter("fade", smoothstep(0.0, 0.45, entry))
+		if is_instance_valid(_halo): _halo.visible = entry > 0.65
+		if is_instance_valid(_oracle_badge): _oracle_badge.visible = entry > 0.65
+		return
+	if is_finite(entry_target_z):
+		entry_target_z = INF
+		_entry_start_z = _base_z
+		_age = 0.0
+		collision_layer = 2
+		_material.set_shader_parameter("fade", 1.0)
 	if _exit_age >= 0:
 		_exit_age += delta
 		var t := _exit_age
@@ -160,20 +189,33 @@ func _physics_process(delta: float) -> void:
 		_sink_age += delta
 		if (_sink_age > 1 and not _notifier.is_on_screen()) or _sink_age > 12: queue_free()
 		return
-	if kind != Kind.TRASH and _age < 0.8:
-		rotation.y = direction * (1.0 - _age / 0.8) * 1.1
-		_material.set_shader_parameter("fade", _age / 0.8)
-	else:
-		rotation.y = 0
-		_material.set_shader_parameter("fade", 1.0)
+	rotation.y = 0
+	_material.set_shader_parameter("fade", 1.0)
 	var fever := GameManager.fever_left > 0 and kind == Kind.FISH
 	if kind == Kind.TRASH and species.begins_with("botella"):
 		position.y -= (0.4 + GameManager.depth * 0.06) * delta
+		position.z = lerpf(_entry_start_z, _base_z, smoothstep(0.0, 1.0, minf(_age / ENTRY_DURATION, 1.0)))
 		if position.y < -0.5: _expire()
 		return
 	position.x += direction * speed * (5.5 if fever else 1.0) * delta
+	if "pulpo" in species:
+		var hop := fmod(_age + _phase * 0.12, 1.35)
+		var impulse := hop < 0.24
+		position.y += (0.95 if impulse else -0.25) * delta
+		position.y = clampf(position.y, _base_y - 0.30, _base_y + 0.52)
+		var octopus_arrival := smoothstep(0.0, 1.0, minf(_age / ENTRY_DURATION, 1.0))
+		position.z = lerpf(_entry_start_z, _base_z, octopus_arrival) + sin(_age * 1.4 + _phase) * 0.18
+		var frame := 1 if impulse else 0
+		if frame != _octopus_frame:
+			_octopus_frame = frame
+			_apply_art(_texture_path("pulpo nadando %d" % (_octopus_frame + 1)))
+		if _age > lifetime or absf(position.x) > 3.1:
+			_exit_age = 0.0
+			_exit_start = position
+		return
 	position.y = _base_y + (2.0 / PI) * asin(sin(_age * (2.8 + GameManager.depth * 0.25) + _phase)) * (0.22 if kind == Kind.FISH else 0.04)
-	position.z = _base_z + sin(_age * 1.5 + _phase) * (0.2 if kind == Kind.FISH else 0.04)
+	var arrival := smoothstep(0.0, 1.0, minf(_age / ENTRY_DURATION, 1.0))
+	position.z = lerpf(_entry_start_z, _base_z, arrival) + sin(_age * 1.5 + _phase) * (0.2 if kind == Kind.FISH else 0.04)
 	if angry:
 		_rage_timer -= delta
 		if _rage_timer <= 0:
@@ -191,7 +233,7 @@ func _animate_swimming(delta: float) -> void:
 	if kind == Kind.TRASH: return
 	var swimming := kind == Kind.FISH and not unsuitable
 	_material.set_shader_parameter("swim_time", _age * (9.0 if angry else 5.5) + _phase)
-	_material.set_shader_parameter("bend_strength", body_bend * (1.65 if "anginla" in species else 1.0) if swimming else 0.0)
+	_material.set_shader_parameter("bend_strength", body_bend * (1.65 if "anginla" in species else 1.0) if swimming and "pulpo" not in species else 0.0)
 	var tilt := sin(_age * 2.8 + _phase) * 0.12 if not unsuitable else -0.25 * direction
 	_sprite.rotation.z = lerp_angle(_sprite.rotation.z, tilt, 1.0 - exp(-delta * 5.0))
 	_sprite.rotation.y = lerp_angle(_sprite.rotation.y, 0.0 if direction > 0 else PI, 1.0 - exp(-delta * 5.0))
@@ -213,6 +255,12 @@ func on_click() -> void:
 		on_target_pressed()
 		return
 	_clicked = true
+	if "pulpo" in species:
+		_apply_art(_texture_path("pulpo asustado (click)"))
+		var ink := Sprite3D.new()
+		ink.set_script(preload("res://scripts/InkBlot.gd"))
+		get_viewport().get_camera_3d().add_child(ink)
+		GameManager.sound_requested.emit("ink")
 	if kind == Kind.SEAL: GameManager.start_fever()
 	elif "oracles" in species:
 		GameManager.start_slow_time()
@@ -274,9 +322,10 @@ func _finish_exit() -> void:
 	_expire()
 
 func get_stats_text() -> String:
-	if kind == Kind.SEAL: return "FOCA / POWER UP\nFiebre de peces: 10 segundos"
-	if kind == Kind.TRASH: return "%s / +5 monedas\nLimpia para proteger a los peces" % species.capitalize()
+	if kind == Kind.SEAL: return "FOCA GIGANTE / FIEBRE DE ORO\n10 s: x2 monedas, peces veloces y música frenética"
+	if kind == Kind.TRASH: return "%s / +5 monedas\nLimpia para proteger a los peces" % ("Botella de agua" if species == "botella" else species.capitalize())
 	if "oracles" in species: return "◷ 5 s"
 	if "anginla" in species: return "ANGUILA / No molestar\nAl tocarla contamina peces cercanos"
+	if "pulpo" in species: return "PULPO / Tinta defensiva\nAl capturarlo mancha el visor 3 s"
 	var stats := GameManager.fish_stats(rarity, size_factor, aura)
 	return "+$%d  ·  −%.1f%%" % [stats.reward, stats.damage]

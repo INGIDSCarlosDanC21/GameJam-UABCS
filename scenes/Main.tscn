@@ -8,14 +8,13 @@
 [ext_resource type="Script" uid="uid://cd50v0e84yxot" path="res://scripts/ShopItem.gd" id="6_shop"]
 [ext_resource type="PackedScene" uid="uid://diwxoo5tclrbo" path="res://seatruck_subnautica.glb" id="7_nxtc6"]
 [ext_resource type="Script" uid="uid://bhy680wym05la" path="res://scripts/CartoonStyle.gd" id="8_style"]
-[ext_resource type="PackedScene" path="res://scenes/AmongUs.tscn" id="9_egg"]
 [ext_resource type="Script" uid="uid://50y2aaebc4vv" path="res://scripts/OceanSession.gd" id="10_session"]
 [ext_resource type="Script" uid="uid://c5sjs2t4drhx2" path="res://scripts/SoundHub.gd" id="11_sound"]
 [ext_resource type="Texture2D" uid="uid://baruwd2p8rfuj" path="res://assets/art/cebo icono.png" id="12_bait_icon"]
 [ext_resource type="Texture2D" uid="uid://jlv1dd5bfqsw" path="res://assets/art/filtroBot iconoV1.png" id="13_filter_1"]
 [ext_resource type="Texture2D" uid="uid://bfjii6o11u3u4" path="res://assets/art/filtroBot iconov2.png" id="14_filter_2"]
 [ext_resource type="Texture2D" uid="uid://ccobvm6vch8ga" path="res://assets/art/filtroBot iconoV3.png" id="15_filter_3"]
-[ext_resource type="Script" path="res://scripts/AudioDirector.gd" id="16_audio"]
+[ext_resource type="Script" uid="uid://bm0l3qyqo5gf6" path="res://scripts/AudioDirector.gd" id="16_audio"]
 
 [sub_resource type="Environment" id="Environment_1"]
 background_mode = 1
@@ -84,6 +83,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
 current = true
 
 [node name="Vignette" type="MeshInstance3D" parent="XROrigin3D/XRCamera3D" unique_id=768427269]
+visible = false
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.14)
 cast_shadow = 0
 mesh = SubResource("QuadMesh_vig")
@@ -93,6 +93,7 @@ script = ExtResource("3_vig")
 tracker = &"right_hand"
 pose = &"aim"
 script = ExtResource("2_ptr")
+pointer_color = Color(0.32, 1, 0.72, 1)
 
 [node name="RayCast3D" type="RayCast3D" parent="XROrigin3D/RightController" unique_id=859726276]
 target_position = Vector3(0, 0, -8)
@@ -111,15 +112,15 @@ tracker = &"left_hand"
 pose = &"aim"
 script = ExtResource("2_ptr")
 desktop_enabled = false
-pointer_color = Color(0.48, 0.74, 1, 1)
+pointer_color = Color(1, 0.35, 0.72, 1)
 
-[node name="RayCast3D" type="RayCast3D" parent="XROrigin3D/LeftController"]
+[node name="RayCast3D" type="RayCast3D" parent="XROrigin3D/LeftController" unique_id=814350800]
 target_position = Vector3(0, 0, -8)
 collision_mask = 2
 collide_with_areas = true
 collide_with_bodies = false
 
-[node name="LaserBeam" type="MeshInstance3D" parent="XROrigin3D/LeftController"]
+[node name="LaserBeam" type="MeshInstance3D" parent="XROrigin3D/LeftController" unique_id=1135501629]
 visible = false
 
 [node name="Cabin" type="Node3D" parent="." unique_id=931301642]
@@ -170,9 +171,6 @@ modulate = Color(0.55, 0.9, 1, 1)
 text = "Comprar Filtro"
 font_size = 28
 
-[node name="AmongUsEasterEgg" parent="Cabin" unique_id=1100147041 instance=ExtResource("9_egg")]
-transform = Transform3D(-1.2006402, 0, -0.0621235, 0, 1.2849197, 0, 0.076575816, 0, -0.9740405, -0.05234641, -0.52907425, 0.8750951)
-
 [node name="Spawner" type="Node3D" parent="." unique_id=47148865]
 script = ExtResource("4_spw")
 entity_scene = ExtResource("5_ent")
@@ -192,5 +190,5 @@ script = ExtResource("10_session")
 [node name="SoundHub" type="Node" parent="." unique_id=1125762549]
 script = ExtResource("11_sound")
 
-[node name="AudioDirector" type="Node" parent="SoundHub"]
+[node name="AudioDirector" type="Node" parent="SoundHub" unique_id=341833126]
 script = ExtResource("16_audio")

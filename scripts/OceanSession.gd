@@ -81,16 +81,15 @@ func _ready() -> void:
 	_mission.outline_size = 4
 	_mission.position = Vector3(0, 2.12, -1.65)
 	add_child(_mission)
-	var reef := Node3D.new()
-	reef.set_script(preload("res://scripts/RestorationReef.gd"))
-	add_child(reef)
 	var motes := MultiMeshInstance3D.new()
 	motes.set_script(preload("res://scripts/OceanMotes.gd"))
 	add_child(motes)
-	var frame := Node3D.new()
-	frame.set_script(preload("res://scripts/CabinFrame.gd"))
-	_cabin_frame = frame
-	add_child(frame)
+	# The viewport remains borderless; UI and the ocean occupy the complete view.
+	_cabin_frame = Node3D.new()
+	add_child(_cabin_frame)
+	var wallet := Node3D.new()
+	wallet.set_script(preload("res://scripts/WalletPanel.gd"))
+	get_parent().get_node("Cabin").add_child(wallet)
 	var lamp := MeshInstance3D.new()
 	var bulb := SphereMesh.new()
 	bulb.radius = 0.07
@@ -141,7 +140,8 @@ func _process(delta: float) -> void:
 		if get_tree().get_nodes_in_group("hostiles").size() < mini(10, 2 + GameManager.depth * 2):
 			var hostile := Area3D.new()
 			hostile.set_script(preload("res://scripts/Hostile.gd"))
-			hostile.snail = randf() < minf(0.92, 0.42 + GameManager.depth * 0.12)
+			hostile.jellyfish = GameManager.depth > 0 and randf() < minf(0.30, 0.09 + GameManager.depth * 0.035)
+			hostile.snail = not hostile.jellyfish and randf() < minf(0.92, 0.42 + GameManager.depth * 0.12)
 			add_child(hostile)
 	var alive := not GameManager.is_run_over()
 	var fever := GameManager.fever_left > 0 and alive

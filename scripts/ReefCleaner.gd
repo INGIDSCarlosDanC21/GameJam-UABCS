@@ -5,6 +5,7 @@ var _bubble_time := 0.0
 var cooldown := 0.0
 var side := 1.0
 var _sprite: Sprite3D
+var paralyzed_left := 0.0
 func _ready() -> void:
 	add_to_group("cleaners")
 	_sprite = Sprite3D.new()
@@ -26,17 +27,17 @@ func _physics_process(delta: float) -> void:
 	if GameManager.is_run_over(): return
 	delta *= GameManager.world_time_scale()
 	age += delta
+	paralyzed_left = maxf(0.0, paralyzed_left - delta)
+	if paralyzed_left > 0.0:
+		_sprite.modulate = Color("a6eaff")
+		return
+	_sprite.modulate = [Color.WHITE, Color("96dcff"), Color("ffdc80")][quality - 1]
 	_bubble_time -= delta
 	if _bubble_time <= 0:
 		_bubble_time = 1.3 / quality
 		GameManager.bubbles_requested.emit(global_position)
 		GameManager.sound_at_requested.emit("robot", global_position)
 	cooldown -= delta
-	if age >= 60:
-		GameManager.active_cleaners = maxi(0, GameManager.active_cleaners - 1)
-		get_parent().explode_at(global_position)
-		queue_free()
-		return
 	var nearest: Node3D
 	var distance := INF
 	for trash in get_tree().get_nodes_in_group("trash"):
@@ -53,6 +54,16 @@ func _physics_process(delta: float) -> void:
 		if nearest.collect_by_robot(): cooldown = [3.0, 1.4, 0.65][quality - 1]
 	elif not nearest and global_position.distance_to(destination) < 0.1:
 		side *= -1
+
+func paralyze(seconds: float) -> void:
+	paralyzed_left = maxf(paralyzed_left, seconds)
+	for effect in get_children():
+		if effect is Node3D and effect.get_script() == preload("res://scripts/RobotShock.gd"):
+			effect.left = paralyzed_left
+			return
+	var shock := Node3D.new()
+	shock.set_script(preload("res://scripts/RobotShock.gd"))
+	add_child(shock)
 
 func _animate_heading(travel: Vector3, delta: float) -> void:
 	if absf(travel.x) > 0.04:

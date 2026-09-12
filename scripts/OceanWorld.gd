@@ -65,6 +65,9 @@ func _ready() -> void:
 	var life := Node3D.new()
 	life.set_script(preload("res://scripts/ReefLife.gd"))
 	add_child(life)
+	var distant_details := Node3D.new()
+	distant_details.set_script(preload("res://scripts/DistantOceanDetails.gd"))
+	add_child(distant_details)
 
 func _batch(label: String, mesh: Mesh, material: Material, count: int) -> MultiMesh:
 	var data := MultiMesh.new()

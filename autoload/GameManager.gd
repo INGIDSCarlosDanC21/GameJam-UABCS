@@ -37,7 +37,7 @@ var net_level := 0
 const MAX_NET_LEVEL := 5
 
 func net_cost() -> int:
-	return 15 + net_level * 15
+	return 50 + net_level * 50
 
 func buy_net() -> bool:
 	if is_run_over() or net_level >= MAX_NET_LEVEL or coins < net_cost(): return false
@@ -105,8 +105,15 @@ func mission_text() -> String:
 	return "3/3 · CONSERVA SALUD ≥70%%  %d/30 s" % int(conservation_time)
 
 func cleaner_quality() -> int:
-	# The Filtrobot evolves at levels 5 and 10; its maximum quality is level 3.
-	return clampi(1 + level / 5, 1, 3)
+	# Every ten player levels unlocks the next robot quality.
+	return clampi(1 + int(level / 10), 1, 3)
+
+func cleaner_limit() -> int:
+	# Start with five persistent Filtrobots and gain five more capacity every ten levels.
+	return 5 + int(level / 10) * 5
+
+func bait_cost() -> int:
+	return BAIT_COST + bait_level * 10
 
 func progress() -> void:
 	if is_run_over(): return
@@ -171,8 +178,8 @@ func let_fish_go() -> void:
 	if not is_run_over(): _set_health(ocean_health + 0.5)
 
 func buy_bait() -> bool:
-	if is_run_over() or coins < BAIT_COST: return false
-	coins -= BAIT_COST
+	if is_run_over() or coins < bait_cost(): return false
+	coins -= bait_cost()
 	bait_level += 1
 	coins_changed.emit(coins)
 	return true
@@ -181,7 +188,7 @@ func filter_cost() -> int:
 	return FILTER_COST + filter_level * 10 + depth * 10
 
 func buy_filter() -> bool:
-	if is_run_over() or coins < filter_cost() or active_cleaners >= 10: return false
+	if is_run_over() or coins < filter_cost() or active_cleaners >= cleaner_limit(): return false
 	coins -= filter_cost()
 	filter_level += 1
 	active_cleaners += 1

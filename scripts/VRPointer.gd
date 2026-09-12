@@ -39,7 +39,15 @@ func _ready() -> void:
 	GameManager.level_changed.connect(func(_level: int): pulse(0.9, 0.22))
 	button_pressed.connect(_pressed)
 	button_released.connect(_released)
-	$LaserBeam.hide()
+	var laser_beam := get_node_or_null("LaserBeam") as MeshInstance3D
+	if laser_beam:
+		laser_beam.hide()
+		var source_material := laser_beam.get_active_material(0)
+		var laser_material := source_material.duplicate() as StandardMaterial3D if source_material else StandardMaterial3D.new()
+		laser_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		laser_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		laser_material.albedo_color = pointer_color
+		laser_beam.material_override = laser_material
 	_ray.top_level = true
 	_ray.collision_mask = 2
 	_ray.collide_with_areas = true

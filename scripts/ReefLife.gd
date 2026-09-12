@@ -16,15 +16,16 @@ func _ready() -> void:
 	_rng.seed = 42019
 	_plant_model(KELP, true)
 	for coral in CORALS: _plant_model(coral, false)
-	# Three loose schools, each at its own depth. Keep all paths behind z=-7.
-	for school in 3:
-		for member in (5 if _mobile else 9):
-			var center := Vector3(-2.5 + school * 2.5, 1.2 + school * 1.35, -12.0 - school * 4.0)
+	# Five loose schools create layered motion across the complete exterior view.
+	# All paths stay behind the gameplay lane at z=-7.
+	for school in 5:
+		for member in (4 if _mobile else 7):
+			var center := Vector3(-5.0 + school * 2.5, 1.15 + (school % 3) * 1.15, -12.0 - school * 3.6)
 			center += Vector3(_rng.randf_range(-0.7, 0.7), _rng.randf_range(-0.65, 0.65), _rng.randf_range(-0.6, 0.6))
-			_swimmer(FISH[school], _rng.randf_range(0.38, 0.68), center, Vector2(6.0 + school, 2.3), school * 1.7 + member * 0.12, 0.095 + school * 0.015)
+			_swimmer(FISH[school % FISH.size()], _rng.randf_range(0.38, 0.72), center, Vector2(5.2 + school * 0.8, 2.0 + (school % 2) * 0.5), school * 1.7 + member * 0.12, 0.085 + school * 0.012)
 	_swimmer(MANTA, 3.8, Vector3(0, 5.2, -22), Vector2(11, 4.0), 0.4, 0.062)
-	for index in (1 if _mobile else 2):
-		_swimmer(DOLPHIN, 2.6, Vector3(-2, 3.5 + index * 0.7, -29), Vector2(13, 4), 2.0 + index * 0.2, 0.073)
+	for index in (2 if _mobile else 3):
+		_swimmer(DOLPHIN, 2.6, Vector3(-3 + index * 1.8, 3.2 + index * 0.7, -27), Vector2(12 + index, 3.6), 2.0 + index * 0.2, 0.073)
 	_update_swimmers(0.0)
 
 func _source_transform(node: Node3D, scene: Node3D) -> Transform3D:

@@ -126,7 +126,7 @@ func _refresh(coins: int) -> void:
 			_label.text = "DESCENDER\nCada 5 niveles" if item == Item.DESCEND else "OCÉANO AGOTADO\nREINICIAR PARTIDA"
 		_panel.albedo_color = Color("286d82") if _hover else Color("102d43")
 		return
-	var price := GameManager.BAIT_COST if item == Item.BAIT else GameManager.filter_cost()
+	var price := GameManager.bait_cost() if item == Item.BAIT else GameManager.filter_cost()
 	if item == Item.NET: price = GameManager.net_cost()
 	var title := "CEBO" if item == Item.BAIT else "FILTROBOT"
 	var level := GameManager.bait_level if item == Item.BAIT else GameManager.cleaner_quality()
@@ -134,6 +134,8 @@ func _refresh(coins: int) -> void:
 		title = "RED"
 		level = GameManager.net_level
 	_label.text = "%s %d · $%d" % [title, level, price]
+	if item == Item.FILTER:
+		_label.text = "FILTROBOT %d · $%d\n%d/%d activos" % [level, price, GameManager.active_cleaners, GameManager.cleaner_limit()]
 	if item == Item.NET and level == GameManager.MAX_NET_LEVEL: _label.text = "RED 5 · MAX"
 	if is_instance_valid(_art):
 		var icon := button_texture

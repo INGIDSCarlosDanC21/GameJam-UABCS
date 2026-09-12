@@ -40,6 +40,9 @@ func run() -> void:
 	check(main.has_node("WindowWaterLight") and main.get_node("WindowWaterLight") in session._lights, "window light follows ocean lighting lifecycle")
 	var left = main.get_node("XROrigin3D/LeftController")
 	var right = main.get_node("XROrigin3D/RightController")
+	if not main.get_viewport().use_xr:
+		var desktop = main.get_node_or_null("DesktopPlayer")
+		check(desktop != null and desktop._enabled, "desktop mode creates first-person controller")
 	check(left.has_method("activate_target") and not left.desktop_enabled, "left pointer is independent and does not duplicate mouse")
 	var shared_fish = entity(main, 0, "pez azul", Vector3(0, 1.5, -3))
 	var before_catches: int = gm.fish_caught
@@ -100,7 +103,7 @@ func run() -> void:
 	check(gm.fish_stats(0, 1.0).damage == 1.2, "easy starting damage")
 	for i in range(24): gm.progress()
 	check(gm.level == 5 and gm.depth == 1, "level five automatically descends")
-	check(not gm.descend() and gm.cleaner_quality() == 2, "milestone cannot repeat and robot evolves")
+	check(not gm.descend() and gm.cleaner_quality() == 1, "first robot quality remains until level ten")
 	var fish = entity(main, 0, "pez azul", Vector3(0,1.5,-3.5))
 	var trash = entity(main, 1, "lata", fish.position)
 	session._contamination()
@@ -135,9 +138,9 @@ func run() -> void:
 	var coins: int = gm.coins
 	robot._physics_process(0.01)
 	check(trash._clicked and gm.coins == coins, "robot cleans without money farming")
-	robot.age = 59.99
+	robot.age = 60.1
 	robot._physics_process(0.02)
-	check(gm.active_cleaners == 0, "robot explodes at sixty seconds")
+	check(is_instance_valid(robot) and gm.active_cleaners == 1, "robot remains active after sixty seconds")
 	var lantern = entity(main, 0, "pez linterna", Vector3(0,1.5,-3))
 	lantern.make_unsuitable()
 	check(not lantern._local_light.visible, "unsuitable lantern switches off")
@@ -146,10 +149,34 @@ func run() -> void:
 	puff.set_script(load("res://scripts/Hostile.gd"))
 	main.add_child(puff)
 	puff.on_click()
-	check(gm.stun_left == 5 and puff.triggered, "puffer stun begins")
-	gm._process(5.1)
+	check(gm.stun_left == 2.5 and puff.triggered, "puffer stun lasts 2.5 seconds")
+	gm._process(2.6)
 	puff._physics_process(5.1)
 	check(gm.stun_left == 0 and puff.leaving, "puffer leaves after stun")
+	gm._set_health(100)
+	gm.depth = 2
+	var jelly := Area3D.new()
+	jelly.set_script(load("res://scripts/Hostile.gd"))
+	jelly.jellyfish = true
+	main.add_child(jelly)
+	var cleaner := Node3D.new()
+	cleaner.set_script(load("res://scripts/ReefCleaner.gd"))
+	main.add_child(cleaner)
+	cleaner.global_position = Vector3(8, 1.0, -8)
+	jelly.on_click()
+	check(jelly.triggered and jelly.collision_layer == 0, "jellyfish discharges once touched")
+	check(cleaner.paralyzed_left >= 5.0 and cleaner.get_child_count() > 1, "jellyfish electrifies nearby cleaners for five seconds")
+	jelly._physics_process(1.1)
+	check(jelly.leaving, "jellyfish leaves after discharge")
+	var octopus = entity(main, 0, "pulpo", Vector3(0, 1.5, -3))
+	octopus.on_click()
+	check(main.get_node("XROrigin3D/XRCamera3D").get_children().any(func(child): return child.get_script() == load("res://scripts/InkBlot.gd")), "octopus adds a three second ink blot to camera")
+	var leaving_octopus = entity(main, 0, "pulpo", Vector3(0, 1.5, -3))
+	leaving_octopus._age = leaving_octopus.lifetime + 0.1
+	leaving_octopus._physics_process(0.01)
+	check(leaving_octopus._exit_age == 0.0, "octopus enters the standard despawn path")
+	gm.stun_left = 0.0
+	gm.depth = 0
 	var arrivals: Array[Node3D] = []
 	var spaced := true
 	for index in 10:
@@ -183,12 +210,25 @@ func run() -> void:
 	snail.global_position = snail._camera.to_global(Vector3(0.6,0,-0.9))
 	snail.release()
 	check(snail.leaving, "snail thrown outside view radius")
+	var shaken_snail := Area3D.new()
+	shaken_snail.set_script(load("res://scripts/Hostile.gd"))
+	shaken_snail.snail = true
+	main.add_child(shaken_snail)
+	shaken_snail.shake_off()
+	check(shaken_snail.leaving, "camera shake releases snails")
 	gm.coins = 10000
 	var price: int = gm.filter_cost()
 	gm.depth += 1
 	check(gm.filter_cost() == price + 10, "depth increases robot price by ten")
-	for i in range(10): gm.buy_filter()
-	check(gm.active_cleaners == 10 and not gm.buy_filter(), "ten robot limit")
+	for i in range(4): gm.buy_filter()
+	check(gm.active_cleaners == 5 and not gm.buy_filter(), "starting robot limit is five")
+	gm.level = 10
+	gm.coins = 10000
+	check(gm.cleaner_limit() == 10 and gm.cleaner_quality() == 2 and gm.buy_filter(), "level ten adds five robot slots and upgrades quality")
+	gm.bait_level = 3
+	check(gm.bait_cost() == 40 and gm.fish_stats(0,1,0).reward == 6, "bait price and fish reward scale by level")
+	gm.net_level = 0
+	check(gm.net_cost() == 50, "net starts at a fair multiple-of-ten price")
 	gm._set_health(20)
 	await create_timer(0.3).timeout
 	check(session._env.background_energy_multiplier < 1, "low health darkens background")
