@@ -16,8 +16,9 @@ func _ready() -> void:
 		var button := Area3D.new()
 		button.set_script(preload("res://scripts/ModeButton.gd"))
 		button.mode = mode
-		button.position = Vector3(-0.43 if mode == 0 else 0.43, 1.5, -1.7)
-		if mode == 2: button.position = Vector3(0, 1.12, -1.7)
+		button.position = Vector3(-0.55 if mode == 0 else 0.55, 1.23, -0.42)
+		if mode == 2: button.position = Vector3(0.58,0.96,-0.20)
+		button.basis = Basis.looking_at(button.position - Vector3(0,1.45,0),Vector3.UP)
 		add_child(button)
 		_buttons.append(button)
 	_credits = Node3D.new()

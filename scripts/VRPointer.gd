@@ -227,6 +227,7 @@ func _release_snail() -> void:
 
 func activate_target(target: Node3D) -> void:
 	if not is_instance_valid(target) or target.is_queued_for_deletion(): return
+	if Time.get_ticks_msec() < int(target.get_meta("direct_touch_until",0)): return
 	if target.has_method("on_pointer_click"):
 		target.on_pointer_click(self)
 	else:
