@@ -30,9 +30,23 @@ var _exit_start := Vector3.ZERO
 var _notifier: VisibleOnScreenNotifier3D
 var _material: ShaderMaterial
 @export_range(0.0, 0.12) var body_bend := 0.045
+@export_range(0.0, 1.0) var color_variety := 0.7
+@export_enum("Aleatorio:-1", "Rayas:0", "Puntos:1", "Degradado:2", "Manchas:3") var color_pattern := -1
 var _turn_wait := randf_range(4.0, 8.0)
 var _oracle_badge: Sprite3D
 @onready var _sprite: Sprite3D = $Sprite3D
+
+func _setup_color_pattern() -> void:
+	# Special species keep their visual identity; color never changes reward/rarity.
+	_material.set_shader_parameter("pattern_strength", 0.0)
+	if kind != Kind.FISH or species not in ["pez azul", "pez naranja"]: return
+	var palette := [Color("3b9acf"), Color("60c9b0"), Color("9b8ad5"), Color("dd7795"), Color("e98764"), Color("77a9d9")]
+	var index := randi_range(0, palette.size() - 1)
+	_material.set_shader_parameter("body_color", palette[index])
+	_material.set_shader_parameter("pattern_color", palette[(index + 2) % palette.size()].lightened(0.18))
+	_material.set_shader_parameter("pattern_style", randi_range(0,3) if color_pattern < 0 else color_pattern)
+	_material.set_shader_parameter("pattern_seed", randf() * 10.0)
+	_material.set_shader_parameter("pattern_strength", color_variety)
 
 func setup(value: Kind, dir: float) -> void:
 	kind = value
@@ -69,6 +83,7 @@ func _ready() -> void:
 	lifetime = 12.0 if kind == Kind.TRASH else 6.3 / maxf(speed, 0.1)
 	_material = ShaderMaterial.new()
 	_material.shader = INK
+	_setup_color_pattern()
 	_sprite.material_override = _material
 	_apply_art(_texture_path(species))
 	if "oracles" in species:
@@ -211,6 +226,7 @@ func on_click() -> void:
 func make_unsuitable() -> void:
 	if unsuitable or _clicked or kind != Kind.FISH: return
 	unsuitable = true
+	_material.set_shader_parameter("pattern_strength", 0.0)
 	if is_instance_valid(_oracle_badge): _oracle_badge.hide()
 	_exit_age = -1
 	if _local_light: _local_light.hide()
