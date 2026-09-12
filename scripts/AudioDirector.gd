@@ -1,8 +1,8 @@
 extends Node
 @export var expedition_music: AudioStreamOggVorbis = preload("res://assets/audio/arcade/expedition.ogg")
 @export var fever_music: AudioStreamOggVorbis = preload("res://assets/audio/arcade/fever.ogg")
-@export_range(-40.0, 0.0) var music_volume_db := -20.0
-@export_range(-50.0, 0.0) var ambience_volume_db := -28.0
+@export_range(-40.0, 0.0) var music_volume_db := -7.0
+@export_range(-50.0, 0.0) var ambience_volume_db := -22.0
 var _normal: AudioStreamPlayer
 var _fever: AudioStreamPlayer
 var _ambience: AudioStreamPlayer
@@ -44,7 +44,7 @@ func _process(delta: float) -> void:
 	_duck_left = maxf(0.0, _duck_left - delta)
 	var muffled := GameManager.stun_left > 0
 	var health := GameManager.ocean_health / GameManager.MAX_HEALTH
-	var gain := db_to_linear(music_volume_db - (6.0 if _duck_left > 0 else 0.0) - (10.0 if muffled else 0.0)) * _entrance
+	var gain := db_to_linear(music_volume_db - (3.0 if _duck_left > 0 else 0.0) - (10.0 if muffled else 0.0)) * _entrance
 	_mix_player(_normal, (1.0 - _blend) * gain)
 	_mix_player(_fever, _blend * gain)
 	var pitch := 0.78 if muffled else lerpf(0.90, 1.0, health)
