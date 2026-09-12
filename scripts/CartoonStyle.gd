@@ -60,6 +60,9 @@ func _style(node: Node) -> void:
 				glass.metallic = 0.0
 				glass.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 				node.set_surface_override_material(i, glass)
+				var curved_glass := ShaderMaterial.new()
+				curved_glass.shader = preload("res://shaders/cabin_glass.gdshader")
+				node.set_surface_override_material(i, curved_glass)
 				continue
 			if source is StandardMaterial3D and source.transparency == BaseMaterial3D.TRANSPARENCY_DISABLED and source.shading_mode != BaseMaterial3D.SHADING_MODE_UNSHADED:
 				var mat := ShaderMaterial.new()

@@ -30,6 +30,9 @@ func _ready() -> void:
 	_sprite = Sprite3D.new()
 	add_child(_sprite)
 	_sprite.shaded = jellyfish
+	if snail:
+		_sprite.no_depth_test = true
+		_sprite.render_priority = 10
 	_snail_index = randi_range(0,2)
 	_set_art(["caracol 1","caracol2","caracol3"][_snail_index] if snail else ("medusa" if jellyfish else "pez goblo tranquilo"))
 	var shape := CollisionShape3D.new()
@@ -61,6 +64,10 @@ func _set_art(name_text: String) -> void:
 	_sprite.region_rect = Rect2(rect)
 	var target_width := 0.14 if snail else (0.28 if jellyfish else 0.22)
 	_sprite.pixel_size = target_width / maxi(1, maxi(rect.size.x, rect.size.y)) if snail else target_width / maxi(1, rect.size.x)
+func _process(_delta: float) -> void:
+	# Follow the rendered head pose, not only the fixed physics tick.
+	if snail and not grabbed and not leaving and is_instance_valid(_camera):
+		global_transform = _camera.global_transform * Transform3D(Basis.IDENTITY, _offset)
 func _physics_process(delta: float) -> void:
 	if GameManager.is_run_over():
 		queue_free()

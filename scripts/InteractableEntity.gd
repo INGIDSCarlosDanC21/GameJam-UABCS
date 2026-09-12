@@ -38,6 +38,8 @@ var _turn_wait := randf_range(4.0, 8.0)
 var _oracle_badge: Sprite3D
 var _octopus_frame := 0
 const ENTRY_DURATION := 4.5
+var _entry_clock := 0.0
+var _swim_blend := 1.0
 @onready var _sprite: Sprite3D = $Sprite3D
 
 func _setup_color_pattern() -> void:
@@ -162,8 +164,9 @@ func _physics_process(delta: float) -> void:
 	_animate_swimming(delta)
 	# Approach before gameplay motion: bottles do not sink and fever fish do not
 	# leave the lane while still arriving. This path is shared by every species.
-	if is_finite(entry_target_z) and _age < ENTRY_DURATION and not unsuitable and _exit_age < 0:
-		var entry: float = _age / ENTRY_DURATION
+	_entry_clock += delta * (4.0 if GameManager.fever_left > 0 else 1.0)
+	if is_finite(entry_target_z) and _entry_clock < ENTRY_DURATION and not unsuitable and _exit_age < 0:
+		var entry: float = _entry_clock / ENTRY_DURATION
 		position.z = lerpf(_entry_start_z, _base_z, sin(entry * PI * 0.5))
 		_material.set_shader_parameter("fade", smoothstep(0.0, 0.45, entry))
 		if is_instance_valid(_halo): _halo.visible = entry > 0.65
@@ -172,7 +175,7 @@ func _physics_process(delta: float) -> void:
 	if is_finite(entry_target_z):
 		entry_target_z = INF
 		_entry_start_z = _base_z
-		_age = 0.0
+		_swim_blend = 0.0
 		collision_layer = 2
 		_material.set_shader_parameter("fade", 1.0)
 	if _exit_age >= 0:
@@ -192,12 +195,21 @@ func _physics_process(delta: float) -> void:
 	rotation.y = 0
 	_material.set_shader_parameter("fade", 1.0)
 	var fever := GameManager.fever_left > 0 and kind == Kind.FISH
+	if kind == Kind.TRASH and GameManager.storm_left > 0:
+		position += Vector3(sin(_age * 8.0 + _phase), cos(_age * 6.0 + _phase), sin(_age * 5.0)) * delta * 1.1
+		position.x = clampf(position.x, -2.9, 2.9)
+		position.y = clampf(position.y, 0.3, 2.8)
+		_sprite.rotation.z += delta * sin(_age * 3.0 + _phase) * 3.0
+		if _age > lifetime: _expire()
+		return
+	_swim_blend = minf(1.0, _swim_blend + delta * 1.8)
+	var movement_blend := smoothstep(0.0, 1.0, _swim_blend)
 	if kind == Kind.TRASH and species.begins_with("botella"):
 		position.y -= (0.4 + GameManager.depth * 0.06) * delta
 		position.z = lerpf(_entry_start_z, _base_z, smoothstep(0.0, 1.0, minf(_age / ENTRY_DURATION, 1.0)))
 		if position.y < -0.5: _expire()
 		return
-	position.x += direction * speed * (5.5 if fever else 1.0) * delta
+	position.x += direction * speed * (8.0 if fever else 1.0) * delta * movement_blend
 	if "pulpo" in species:
 		var hop := fmod(_age + _phase * 0.12, 1.35)
 		var impulse := hop < 0.24
@@ -213,9 +225,9 @@ func _physics_process(delta: float) -> void:
 			_exit_age = 0.0
 			_exit_start = position
 		return
-	position.y = _base_y + (2.0 / PI) * asin(sin(_age * (2.8 + GameManager.depth * 0.25) + _phase)) * (0.22 if kind == Kind.FISH else 0.04)
+	position.y = _base_y + (2.0 / PI) * asin(sin(_age * (2.8 + GameManager.depth * 0.25) + _phase)) * (0.22 if kind == Kind.FISH else 0.04) * movement_blend
 	var arrival := smoothstep(0.0, 1.0, minf(_age / ENTRY_DURATION, 1.0))
-	position.z = lerpf(_entry_start_z, _base_z, arrival) + sin(_age * 1.5 + _phase) * (0.2 if kind == Kind.FISH else 0.04)
+	position.z = lerpf(_entry_start_z, _base_z, arrival) + sin(_age * 1.5 + _phase) * (0.2 if kind == Kind.FISH else 0.04) * movement_blend
 	if angry:
 		_rage_timer -= delta
 		if _rage_timer <= 0:
@@ -274,7 +286,7 @@ func on_click() -> void:
 func make_unsuitable() -> void:
 	if unsuitable or _clicked or kind != Kind.FISH: return
 	unsuitable = true
-	_material.set_shader_parameter("pattern_strength", 0.0)
+	# Keep this individual's palette and pattern when replacing its death pose.
 	if is_instance_valid(_oracle_badge): _oracle_badge.hide()
 	_exit_age = -1
 	if _local_light: _local_light.hide()
@@ -297,12 +309,6 @@ func make_unsuitable() -> void:
 				found = true
 				break
 	if not found: _material.set_shader_parameter("tint", Color(0.4, 0.48, 0.48))
-	var tag := Label3D.new()
-	tag.text = "NO APTO"
-	tag.font_size = 24
-	tag.pixel_size = 0.002
-	tag.position.y = 0.25
-	add_child(tag)
 
 func collect_by_robot() -> bool:
 	if kind != Kind.TRASH or _clicked or GameManager.is_run_over(): return false

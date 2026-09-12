@@ -21,14 +21,14 @@ func run() -> void:
 	main.get_node("Spawner").set_process(false)
 	var ocean = main.get_node("OceanWorld")
 	var life = ocean.get_node("ReefLife")
-	check(life._swimmers.size() == 39, "desktop has five schools, manta and three dolphins")
+	check(life._swimmers.size() == 41, "desktop includes depth-gated shark and whale")
 	check(life.find_children("*", "CollisionObject3D", true, false).is_empty(), "scenery cannot intercept either controller or collide with gameplay")
 	var planted := 0
 	var plants: Array[Node] = life.find_children("*", "MultiMeshInstance3D", true, false)
 	for plant in plants: planted += plant.multimesh.instance_count
 	check(plants.size() > 10 and planted > 60, "multiple imported coral shapes and kelp are instanced")
 	var players: Array[Node] = life.find_children("*", "AnimationPlayer", true, false)
-	check(players.size() == 39, "all decorative animals have skeletal swimming")
+	check(players.size() == 41, "all decorative animals have skeletal swimming")
 	var looping := true
 	for player in players:
 		looping = looping and player.is_playing() and player.get_animation(player.current_animation).loop_mode == Animation.LOOP_LINEAR
@@ -48,7 +48,9 @@ func run() -> void:
 		life._update_swimmers(tick * 0.25 + 0.016)
 		smooth = smooth and before.distance_to(life._swimmers[0].node.position) < 0.03
 		for swimmer in life._swimmers:
-			safe = safe and swimmer.node.position.z < -8.0 and swimmer.node.transform.is_finite()
+			if not swimmer.node.visible: continue
+			var at: Vector3 = swimmer.node.position
+			safe = safe and (at.z < -8.0 or absf(at.x) > 8.0) and swimmer.node.transform.is_finite()
 	check(safe, "five minutes of paths stay finite and behind the gameplay lanes")
 	check(smooth, "path positions and heading evolve without boundary teleports")
 	check(node_count == life.get_child_count(), "population stays bounded across repeated circuits")

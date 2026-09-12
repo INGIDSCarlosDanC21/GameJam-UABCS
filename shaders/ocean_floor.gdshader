@@ -1,4 +1,5 @@
 shader_type spatial;
+render_mode cull_disabled;
 #include "res://shaders/water_motion.gdshaderinc"
 uniform float depth_level = 0.0;
 uniform float ecosystem_light = 1.0;

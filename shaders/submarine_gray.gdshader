@@ -22,5 +22,5 @@ void fragment() {
 	float caustic = pow(1.0 - abs(pattern), 16.0);
 	float window = (1.0 - smoothstep(1.4, 2.8, abs(world_position.x))) * (1.0 - smoothstep(0.5, 3.5, world_position.z));
 	float facing = 0.2 + 0.8 * max(0.0, dot(normalize(world_normal), normalize(vec3(0.0, 0.6, -1.0))));
-	EMISSION = vec3(0.10, 0.32, 0.36) * caustic * window * facing * water_light;
+	EMISSION = vec3(0.04, 0.07, 0.075) * caustic * window * facing * water_light * 0.22;
 }

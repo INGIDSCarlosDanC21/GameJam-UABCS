@@ -27,6 +27,12 @@ func _ready() -> void:
 	var files := {"puffer": "bong_001", "snail": "scratch_001", "snail_throw": "drop_002", "death": "back_001", "fever": "maximize_001", "lantern_out": "minimize_001", "level": "confirmation_002", "fish": "pluck_001", "trash": "glass_002", "depth": "minimize_001", "robot": "drop_002"}
 	for event in files: _sounds[event] = load(folder + files[event] + ".ogg")
 	_sounds["ink"] = preload("res://assets/audio/effects/octopus_ink_splat_cc0.wav")
+	_sounds["oracle"] = preload("res://scripts/FeedbackTone.gd").make_tone(780.0, 180.0, 0.85)
+	_sounds["flashlight"] = preload("res://scripts/FeedbackTone.gd").make_tone(320.0, 950.0, 0.32)
+	_sounds["robot_clean"] = preload("res://scripts/FeedbackTone.gd").make_tone(180, 460, 0.18)
+	_sounds["storm"] = preload("res://scripts/FeedbackTone.gd").make_tone(95, 30, 1.4)
+	for milestone in range(1, 7):
+		_sounds["encounter_" + str(milestone)] = preload("res://scripts/FeedbackTone.gd").make_tone(420.0 / milestone, 180.0 / milestone, 1.0 + milestone * 0.15)
 	_sounds["electric"] = preload("res://assets/audio/effects/jellyfish_electric_cc0.wav")
 	for index in 8:
 		var voice := AudioStreamPlayer.new()

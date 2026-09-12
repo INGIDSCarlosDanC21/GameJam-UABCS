@@ -34,7 +34,11 @@ var _haptic_until := 0
 var _haptic_amplitude := 0.0
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	add_to_group("xr_pointers")
+	var flashlight := SpotLight3D.new()
+	flashlight.set_script(preload("res://scripts/CursorFlashlight.gd"))
+	add_child(flashlight)
 	GameManager.depth_changed.connect(func(_depth: int): pulse(1.0, 0.45))
 	GameManager.level_changed.connect(func(_level: int): pulse(0.9, 0.22))
 	button_pressed.connect(_pressed)
@@ -148,7 +152,7 @@ func _physics_process(delta: float) -> void:
 	_elapsed += delta
 	_idle += delta
 	_info.modulate.a = move_toward(_info.modulate.a, 1.0 if _elapsed < 60 or _idle >= 5 or is_instance_valid(_target) else 0.0, delta)
-	if GameManager.stun_left > 0:
+	if GameManager.stun_left > 0 and not get_tree().paused:
 		_held = false
 		_progress = 0
 		_info.text = "BLOQUEADO %.1f s" % GameManager.stun_left
@@ -194,6 +198,11 @@ func _physics_process(delta: float) -> void:
 		if is_instance_valid(_target) and _target.has_method("set_hovered"):
 			_set_hover(_target, true)
 		if is_instance_valid(_target): pulse(0.12, 0.025)
+	if get_tree().paused and (not is_instance_valid(_target) or not _target.is_in_group("pause_controls")):
+		_clear_target()
+		_pressed_target = null
+		_info.text = "PAUSA"
+		return
 	if not is_instance_valid(_target) or not _target.is_in_group("interactable"):
 		_info.text = "Pinza" if _uses_hands() else "Mantén"
 		return
@@ -234,6 +243,7 @@ func _release_snail() -> void:
 	held_snail = null
 
 func activate_target(target: Node3D) -> void:
+	if get_tree().paused and (not is_instance_valid(target) or not target.is_in_group("pause_controls")): return
 	if not is_instance_valid(target) or target.is_queued_for_deletion(): return
 	if Time.get_ticks_msec() < int(target.get_meta("direct_touch_until",0)): return
 	if target.has_method("on_pointer_click"):

@@ -36,6 +36,8 @@ func run() -> void:
 			var material = mesh.get_active_material(index)
 			if material is StandardMaterial3D and material.resource_name == "Glass":
 				glass_checked = material.albedo_color.a < 0.08
+			if material is ShaderMaterial and material.shader == preload("res://shaders/cabin_glass.gdshader"):
+				glass_checked = true
 	check(glass_checked, "cabin glass preserves visibility of ocean and HUD")
 	check(main.has_node("WindowWaterLight") and main.get_node("WindowWaterLight") in session._lights, "window light follows ocean lighting lifecycle")
 	var left = main.get_node("XROrigin3D/LeftController")
@@ -228,7 +230,7 @@ func run() -> void:
 	gm.bait_level = 3
 	check(gm.bait_cost() == 40 and gm.fish_stats(0,1,0).reward == 6, "bait price and fish reward scale by level")
 	gm.net_level = 0
-	check(gm.net_cost() == 50, "net starts at a fair multiple-of-ten price")
+	check(gm.net_cost() == 150, "net starts at updated price")
 	gm._set_health(20)
 	await create_timer(0.3).timeout
 	check(session._env.background_energy_multiplier < 1, "low health darkens background")

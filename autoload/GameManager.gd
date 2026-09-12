@@ -34,10 +34,22 @@ var coins := 25
 var ocean_health := 100.0
 var bait_level := 0
 var net_level := 0
+var flashlight_level := 0
+var storm_left := 0.0
+var storm_wait := 65.0
+func flashlight_cost() -> int:
+	return 250 * (flashlight_level + 1) * (flashlight_level + 1)
+func buy_flashlight() -> bool:
+	if is_run_over() or flashlight_level >= 5 or coins < flashlight_cost(): return false
+	coins -= flashlight_cost()
+	flashlight_level += 1
+	coins_changed.emit(coins)
+	sound_requested.emit("flashlight")
+	return true
 const MAX_NET_LEVEL := 5
 
 func net_cost() -> int:
-	return 50 + net_level * 50
+	return 150 * (net_level + 1) * (net_level + 1)
 
 func buy_net() -> bool:
 	if is_run_over() or net_level >= MAX_NET_LEVEL or coins < net_cost(): return false
@@ -65,6 +77,12 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	if is_run_over(): return
+	storm_left = maxf(0.0, storm_left - delta)
+	storm_wait -= delta
+	if storm_wait <= 0.0:
+		storm_left = 12.0
+		storm_wait = randf_range(75.0, 130.0)
+		sound_requested.emit("storm")
 	advance_expedition(delta)
 	stun_left = maxf(0, stun_left - delta)
 	slow_time_left = maxf(0, slow_time_left - delta)
@@ -134,6 +152,7 @@ func start_fever() -> void:
 func start_slow_time() -> void:
 	if is_run_over(): return
 	slow_time_left = 5.0
+	sound_requested.emit("oracle")
 
 func world_time_scale() -> float:
 	return 0.38 if slow_time_left > 0 else 1.0
@@ -229,6 +248,9 @@ func restart() -> void:
 	ocean_health = 100
 	bait_level = 0
 	net_level = 0
+	flashlight_level = 0
+	storm_left = 0.0
+	storm_wait = 65.0
 	filter_level = 0
 	level = 1
 	depth = 0

@@ -83,8 +83,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
 current = true
 
 [node name="Vignette" type="MeshInstance3D" parent="XROrigin3D/XRCamera3D" unique_id=768427269]
-visible = false
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.14)
+visible = false
 cast_shadow = 0
 mesh = SubResource("QuadMesh_vig")
 script = ExtResource("3_vig")

@@ -24,20 +24,34 @@ func _ready() -> void:
 	for z in cells:
 		for x in cells:
 			for corner in [Vector2(0, 0), Vector2(1, 0), Vector2(0, 1), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)]:
-				var px: float = -24.0 + (x + corner.x) * 48.0 / cells
-				var pz: float = -38.0 + (z + corner.y) * 42.0 / cells
+				var px: float = -36.0 + (x + corner.x) * 72.0 / cells
+				var pz: float = -40.0 + (z + corner.y) * 44.0 / cells
 				terrain.add_vertex(Vector3(px, _height(px, pz), pz))
 	terrain.generate_normals()
 	_mesh(terrain.commit(), sand, Vector3.ZERO)
 	var distant_floor := PlaneMesh.new()
-	distant_floor.size = Vector2(600, 500)
-	_mesh(distant_floor, sand, Vector3(0, -2.4, -260))
+	distant_floor.size = Vector2(600, 600)
+	_mesh(distant_floor, sand, Vector3(0, -2.65, 0))
 	var random := RandomNumberGenerator.new()
 	random.seed = 718
 	var stone := _material(preload("res://shaders/reef_rock.gdshader"))
 	var rock := SphereMesh.new()
 	rock.radial_segments = 12
 	rock.rings = 6
+	var perimeter := _batch("SurroundingRocks", rock, stone, 56)
+	for index in 56:
+		var angle := PI + PI * index / 55.0
+		var radius := random.randf_range(13.0, 28.0)
+		var at := Vector3(cos(angle) * radius, 0, sin(angle) * radius)
+		at.y = _height(at.x, at.z) - 0.25
+		var size := Vector3(random.randf_range(2, 5), random.randf_range(1, 3), random.randf_range(2, 4))
+		perimeter.set_instance_transform(index, Transform3D(Basis(Vector3.UP, angle).scaled(size), at))
+	_build_caves(stone)
+	var central := _batch("CentralReefShelf", rock, stone, 7)
+	for index in 7:
+		var at := Vector3((index - 3) * 1.8, 0, -22.0 - absf(index - 3) * 0.7)
+		at.y = _height(at.x, at.z) + 0.25
+		central.set_instance_transform(index, Transform3D(Basis.IDENTITY.scaled(Vector3(3.1, 1.8 + sin(index) * 0.5, 2.5)), at))
 	var rocks := _batch("ReefRocks", rock, stone, 48)
 	for index in 48:
 		var at := Vector3(random.randf_range(-18, 18), 0, random.randf_range(-30, -7))
@@ -68,6 +82,9 @@ func _ready() -> void:
 	var distant_details := Node3D.new()
 	distant_details.set_script(preload("res://scripts/DistantOceanDetails.gd"))
 	add_child(distant_details)
+	var fauna := Node3D.new()
+	fauna.set_script(preload("res://scripts/DepthFauna.gd"))
+	add_child(fauna)
 
 func _batch(label: String, mesh: Mesh, material: Material, count: int) -> MultiMesh:
 	var data := MultiMesh.new()
@@ -84,7 +101,29 @@ func _batch(label: String, mesh: Mesh, material: Material, count: int) -> MultiM
 	return data
 
 func _height(x: float, z: float) -> float:
-	return -1.4 + sin(x * 0.24) * 0.45 + cos(z * 0.32 + x * 0.11) * 0.35
+	var distance := Vector2(x, z).length()
+	var dunes := smoothstep(7.0, 15.0, distance) * (1.4 + sin(x * 0.19 + z * 0.13) * 0.85 + cos(z * 0.25 - x * 0.08) * 0.55)
+	var boundary := 1.0 - smoothstep(27.0, 34.0, maxf(absf(x), absf(z)))
+	return lerpf(-2.4, -1.7 + sin(x * 0.24) * 0.25 + cos(z * 0.32) * 0.2 + dunes, boundary)
+
+func _build_caves(material: Material) -> void:
+	# Thick open tunnels; their hollow silhouette remains visible from the cabin.
+	for side in [-1.0, 1.0]:
+		var center := Vector3(float(side) * 15.0, 0.0, -2.0)
+		center.y = _height(center.x, center.z) - 0.4
+		var surface := SurfaceTool.new()
+		surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+		for segment in 16:
+			for layer in 3:
+				var ring: Array[Vector3] = []
+				for corner in [Vector2(0, 0), Vector2(1, 0), Vector2(0, 1), Vector2(1, 1)]:
+					var angle: float = (segment + corner.x) * PI / 16.0
+					var along: float = (layer + corner.y) * 2.0
+					ring.append(Vector3(cos(angle) * 3.1, sin(angle) * (3.3 + sin(along) * 0.25), along))
+				for vertex in [0, 2, 1, 1, 2, 3]: surface.add_vertex(ring[vertex])
+		surface.generate_normals()
+		var cave := _mesh(surface.commit(), material, center)
+		cave.rotation.y = -float(side) * PI * 0.5
 
 func _material(shader: Shader) -> ShaderMaterial:
 	var material := ShaderMaterial.new()

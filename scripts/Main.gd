@@ -8,6 +8,21 @@ extends Node3D
 
 func _ready() -> void:
 	_setup_xr()
+	var flashlight := Area3D.new()
+	flashlight.set_script(preload("res://scripts/FlashlightShop.gd"))
+	var shape := CollisionShape3D.new()
+	shape.name = "CollisionShape3D"
+	flashlight.add_child(shape)
+	var label := Label3D.new()
+	label.name = "Label3D"
+	flashlight.add_child(label)
+	$Cabin.add_child(flashlight)
+	var seated := Node.new()
+	seated.set_script(preload("res://scripts/SeatedCalibration.gd"))
+	add_child(seated)
+	var pause_button := Area3D.new()
+	pause_button.set_script(preload("res://scripts/PauseButton.gd"))
+	$Cabin.add_child(pause_button)
 	var snail_shake := Node.new()
 	snail_shake.set_script(preload("res://scripts/SnailShake.gd"))
 	add_child(snail_shake)

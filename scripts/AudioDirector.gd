@@ -4,16 +4,23 @@ extends Node
 @export_range(-40.0, 0.0) var music_volume_db := -7.0
 @export_range(-50.0, 0.0) var ambience_volume_db := -22.0
 var _normal: AudioStreamPlayer
+var _deep_player: AudioStreamPlayer
+var _depth_blend := 0.0
 var _fever: AudioStreamPlayer
 var _ambience: AudioStreamPlayer
 var _filter: AudioEffectLowPassFilter
 var _blend := 0.0
 var _duck_left := 0.0
 var _entrance := 0.0
+const SHALLOW: Array[String] = ["Atlantean Twilight", "Continue Life", "Dream Culture"]
+const DEEP: Array[String] = ["Darkest Child", "Anxiety", "Apprehension"]
 
 func _ready() -> void:
 	name = "AudioDirector"
 	_normal = _music(expedition_music)
+	_normal.stream = load("res://assets/audio/depth/underwater_theme.ogg").duplicate()
+	_normal.stream.loop = true
+	_deep_player = _music(load("res://assets/audio/depth/abyss_pad.ogg"))
 	_fever = _music(fever_music)
 	_ambience = AudioStreamPlayer.new()
 	_ambience.stream = preload("res://scripts/ArcadeAudio.gd").make_tone(false)
@@ -37,19 +44,24 @@ func _music(source: AudioStreamOggVorbis) -> AudioStreamPlayer:
 	return player
 
 func _process(delta: float) -> void:
+	_depth_blend = move_toward(_depth_blend, 1.0 if GameManager.depth >= 15 else 0.0, delta / 4.0)
 	var over := GameManager.is_run_over()
 	var fever := GameManager.fever_left > 0 and not over
-	_blend = move_toward(_blend, 1.0 if fever else 0.0, delta * 2.0)
+	_blend = move_toward(_blend, 1.0 if fever else 0.0, delta / 1.5)
 	_entrance = move_toward(_entrance, 0.0 if over else 1.0, delta * 0.8)
 	_duck_left = maxf(0.0, _duck_left - delta)
 	var muffled := GameManager.stun_left > 0
 	var health := GameManager.ocean_health / GameManager.MAX_HEALTH
 	var gain := db_to_linear(music_volume_db - (3.0 if _duck_left > 0 else 0.0) - (10.0 if muffled else 0.0)) * _entrance
-	_mix_player(_normal, (1.0 - _blend) * gain)
-	_mix_player(_fever, _blend * gain)
+	var depth_mix := smoothstep(0.0, 1.0, _depth_blend)
+	var fever_mix := smoothstep(0.0, 1.0, _blend)
+	_mix_player(_normal, cos(depth_mix * PI * 0.5) * cos(fever_mix * PI * 0.5) * gain)
+	_mix_player(_deep_player, sin(depth_mix * PI * 0.5) * cos(fever_mix * PI * 0.5) * gain)
+	_mix_player(_fever, sin(fever_mix * PI * 0.5) * gain)
 	var pitch := 0.78 if muffled else lerpf(0.90, 1.0, health)
 	if fever: pitch = 1.16
 	_normal.pitch_scale = lerpf(_normal.pitch_scale, pitch, 1.0 - exp(-delta * 2.0))
+	_deep_player.pitch_scale = _normal.pitch_scale
 	_fever.pitch_scale = lerpf(_fever.pitch_scale, 1.18 if fever else 1.0, 1.0 - exp(-delta * 3.0))
 	_ambience.pitch_scale = lerpf(0.8, 1.0, health)
 	_ambience.volume_db = lerpf(_ambience.volume_db, ambience_volume_db if not over else -60.0, 1.0 - exp(-delta * 2.0))

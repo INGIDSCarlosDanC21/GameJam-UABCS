@@ -21,8 +21,10 @@ func _ready() -> void:
 	for school in 5:
 		for member in (4 if _mobile else 7):
 			var center := Vector3(-5.0 + school * 2.5, 1.15 + (school % 3) * 1.15, -12.0 - school * 3.6)
+			if school >= 3: center = Vector3(-17.0 if school == 3 else 17.0, 3.8, 2.0)
 			center += Vector3(_rng.randf_range(-0.7, 0.7), _rng.randf_range(-0.65, 0.65), _rng.randf_range(-0.6, 0.6))
-			_swimmer(FISH[school % FISH.size()], _rng.randf_range(0.38, 0.72), center, Vector2(5.2 + school * 0.8, 2.0 + (school % 2) * 0.5), school * 1.7 + member * 0.12, 0.085 + school * 0.012)
+			var radius := Vector2(3.0, 7.0) if school >= 3 else Vector2(5.2 + school * 0.8, 2.0 + (school % 2) * 0.5)
+			_swimmer(FISH[school % FISH.size()], _rng.randf_range(0.38, 0.72), center, radius, school * 1.7 + member * 0.12, 0.085 + school * 0.012)
 	_swimmer(MANTA, 3.8, Vector3(0, 5.2, -22), Vector2(11, 4.0), 0.4, 0.062)
 	for index in (2 if _mobile else 3):
 		_swimmer(DOLPHIN, 2.6, Vector3(-3 + index * 1.8, 3.2 + index * 0.7, -27), Vector2(12 + index, 3.6), 2.0 + index * 0.2, 0.073)
@@ -72,6 +74,10 @@ func _plant_model(packed: PackedScene, kelp: bool) -> void:
 			var side := -1.0 if index % 2 == 0 else 1.0
 			var z := _rng.randf_range(-29.0, -7.5)
 			var x := side * _rng.randf_range(4.0, 11.0)
+			# Alternate front vegetation with side and rear gardens around the hull.
+			if index % 2 == 0:
+				x = side * _rng.randf_range(8.5, 19.0)
+				z = _rng.randf_range(-8.0, 1.0)
 			if index % 5 == 0:
 				z = _rng.randf_range(-27, -19)
 				x = _rng.randf_range(-12, 12)
@@ -134,6 +140,10 @@ func _process(delta: float) -> void:
 func _update_swimmers(clock: float) -> void:
 	for swimmer in _swimmers:
 		var animal: Node3D = swimmer.node
+		# Retire shallow fauna in the abyss instead of rendering invisible animals.
+		animal.visible = GameManager.depth >= int(swimmer.get("min_depth", 0)) and GameManager.depth < int(swimmer.get("max_depth", 15))
+		animal.process_mode = Node.PROCESS_MODE_INHERIT if animal.visible else Node.PROCESS_MODE_DISABLED
+		if not animal.visible: continue
 		var t: float = clock * swimmer.speed * swimmer.direction + swimmer.phase
 		var radius: Vector2 = swimmer.radius
 		var frequency := 2.0 if swimmer.pattern == 1 else 1.0

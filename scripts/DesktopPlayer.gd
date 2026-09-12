@@ -9,6 +9,9 @@ extends Node
 var _origin: XROrigin3D
 var _camera: Camera3D
 var _enabled := false
+var _focus_paused := false
+var _restore_capture := false
+var _pause_label: Label
 
 
 func _ready() -> void:
@@ -21,16 +24,20 @@ func _ready() -> void:
 		set_process_unhandled_input(false)
 		return
 	_show_controls()
+	# Receive focus notifications even while the rest of the game is paused.
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 
 func _exit_tree() -> void:
+	if _focus_paused:
+		get_tree().paused = false
 	if _enabled and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not _enabled:
+	if not _enabled or _focus_paused:
 		return
 	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED else Input.MOUSE_MODE_CAPTURED)
@@ -47,7 +54,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _process(delta: float) -> void:
-	if not _enabled or Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+	if not _enabled or get_tree().paused or Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
 		return
 	var direction := Vector3.ZERO
 	if Input.is_key_pressed(KEY_W): direction.z -= 1.0
@@ -76,3 +83,24 @@ func _show_controls() -> void:
 	label.add_theme_font_size_override("font_size", 16)
 	label.modulate = Color("c8f6ff")
 	layer.add_child(label)
+	_pause_label = Label.new()
+	_pause_label.text = "PAUSA · Vuelve a la ventana para continuar"
+	_pause_label.position = Vector2(20, 52)
+	_pause_label.add_theme_font_size_override("font_size", 22)
+	_pause_label.hide()
+	layer.add_child(_pause_label)
+
+func _notification(what: int) -> void:
+	if not _enabled or not is_inside_tree(): return
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		if get_tree().paused: return
+		_restore_capture = Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
+		_focus_paused = true
+		get_tree().paused = true
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+		if is_instance_valid(_pause_label): _pause_label.show()
+	elif what == NOTIFICATION_APPLICATION_FOCUS_IN and _focus_paused:
+		_focus_paused = false
+		get_tree().paused = false
+		if _restore_capture: Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+		if is_instance_valid(_pause_label): _pause_label.hide()

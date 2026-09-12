@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://dmybrim0ahcag"
+path="res://.godot/imported/Dream Culture.mp3-87964f0d4db32bc423a74f31bd4b73d6.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/depth/Dream Culture.mp3"
+dest_files=["res://.godot/imported/Dream Culture.mp3-87964f0d4db32bc423a74f31bd4b73d6.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

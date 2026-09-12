@@ -36,6 +36,10 @@ func _ready() -> void:
 	var credit_text := Label3D.new()
 	credit_text.text = "MODELOS DEL ARRECIFE\nAnimated Fish · Quaternius · CC0 1.0\nquaternius.com/packs/animatedfish.html\nCoral Reef Set2, Set3, Set6 · MiniPoly · CC BY 3.0\npoly.pizza/m/HdrPoAyuCJ · /m/UyswwdHFiL · /m/hOBkCGKjlo\nKelp · Poly by Google · poly.pizza/m/4cFllH6Iazk\nOrange Coral · Device Lab · poly.pizza/m/3HEc6LvqCJd\nCC BY 3.0: creativecommons.org/licenses/by/3.0\nAdaptaciones: escala, materiales y movimiento ambiental."
 	credit_text.font_size = 18
+	credit_text.text += "\nMÚSICA: Atlantean Twilight · Continue Life · Dream Culture\nDarkest Child · Anxiety · Apprehension\nKevin MacLeod (incompetech.com) · CC BY 4.0\ncreativecommons.org/licenses/by/4.0/"
+	quad.size.y = 0.85
+	credit_text.font_size = 15
+	credit_text.text += "\nAmbiente submarino: Cleyton Kauffman · isaiah658 · CC0\nShark / Whale: Quaternius · CC0 · poly.pizza"
 	credit_text.pixel_size = 0.0013
 	credit_text.position.z = 0.015
 	_credits.add_child(credit_text)

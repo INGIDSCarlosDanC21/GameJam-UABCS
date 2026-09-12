@@ -34,8 +34,14 @@ func run() -> void:
 	if DisplayServer.get_name() != "headless":
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png("res://.godot/fish-patterns.png")
-	fish[0].make_unsuitable()
-	check(fish[0]._material.get_shader_parameter("pattern_strength") == 0.0,"unsuitable art keeps original appearance")
+	for entity in fish:
+		var palette: Dictionary = {}
+		for parameter in ["pattern_strength", "pattern_style", "pattern_seed", "pattern_color", "body_color"]:
+			palette[parameter] = entity._material.get_shader_parameter(parameter)
+		entity.make_unsuitable()
+		for parameter in palette:
+			check(entity._material.get_shader_parameter(parameter) == palette[parameter], "dead fish retains " + parameter)
+		check(entity.find_children("*", "Label3D", true, false).is_empty(), "dead fish has no floating text")
 	for species in ["pez oracles","pez linterna","anginla","pez dorado millonario"]:
 		var entity = load("res://scenes/InteractableEntity.tscn").instantiate()
 		entity.species = species

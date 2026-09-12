@@ -160,7 +160,8 @@ func _process(delta: float) -> void:
 		if not is_instance_valid(light): continue
 		var original: Array = _light_defaults[light]
 		light.light_energy = lerpf(light.light_energy, float(original[0]) * (1.2 if fever else 1.0) * illumination, 1.0 - exp(-3.0 * delta))
-		light.light_color = light.light_color.lerp(Color("ffd064") if fever else original[1], 1.0 - exp(-3.0 * delta))
+		var target_color: Color = Color("b26aff") if GameManager.slow_time_left > 0 else (Color("ffd064") if fever else original[1])
+		light.light_color = light.light_color.lerp(target_color, 1.0 - exp(-3.0 * delta))
 	var alarm_on := alive and health < 0.3
 	var flash := (0.5 + 0.5 * sin(_pulse * TAU)) if alarm_on else 0.0
 	_alarm_mat.albedo_color = Color(0.2 + flash * 0.8, 0.01, 0.01)

@@ -20,7 +20,7 @@ func run() -> void:
 	var net = main.get_node("OceanSession/ShopNet")
 	check(net.position.x < -0.5 and main.get_node("Cabin/ShopFilter").position.x > 0.5,"shop sits on both sides, clear of alarm")
 	check(net.has_node("ConsoleTrim"),"buttons have physical console trim")
-	gm.coins = 500
+	gm.coins = 5000
 	var start: int = gm.net_level
 	touch.feed_tip("left",net.to_global(Vector3(0,0,0.02)))
 	check(gm.net_level == start,"tracking appearing inside button cannot purchase")
