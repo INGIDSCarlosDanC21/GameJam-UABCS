@@ -43,3 +43,7 @@ Tutorial reducido a dos acciones reales (limpiar y comprar un robot), seguido de
 Los paquetes actualizados se generan en `export/release/1.0.0-rc2/`, con ZIP de Windows, APK firmado, créditos, notas y sumas SHA256. El visor está desconectado: esta exportación no equivale a una nueva prueba ni instalación en Quest.
 
 La revisión local confirma que el submarino Seatruck sigue referenciado por Main.tscn y que SoundHub conserva los audios originales como alternativas de carga. No se han inventado permisos ni sustituido el arte principal sin recursos equivalentes. Sigue pendiente la aceptación del último tutorial y la disposición del botón en el visor.
+
+## Demo para presentación
+
+El usuario aprobó el funcionamiento de RC2. Se prepara `1.0.0-demo` (Android code 8) para evaluación del cliente, con los mismos sistemas jugables aprobados. No es una certificación de derechos para comercializar o reutilizar los recursos; permanecen los créditos y pendientes arriba.

@@ -1,4 +1,10 @@
-> Estado actual: **1.0.0-rc2**, candidata de cierre. Consulta [validación y pendientes](docs/RELEASE_1_0.md), [Quest 2](docs/QUEST2.md) y [créditos completos](assets/CREDITS.txt). Las instrucciones históricas de arte que siguen no describen todas las mecánicas actuales.
+# Ocean VR · Demo 1.0
+
+**[Página de descarga](https://ingidscarlosdanc21.github.io/GameJam-UABCS/)** · **[Archivos de la demo](https://github.com/INGIDSCarlosDanC21/GameJam-UABCS/releases/tag/demo-v1.0.0)**
+
+Demo para presentación y evaluación del cliente: Windows, PCVR y Meta Quest 2. Instrucciones y controles en la página de descarga. Los créditos de terceros no conceden permiso de reutilización comercial.
+
+> Estado actual: **1.0.0-demo**, candidata de cierre. Consulta [validación y pendientes](docs/RELEASE_1_0.md), [Quest 2](docs/QUEST2.md) y [créditos completos](assets/CREDITS.txt). Las instrucciones históricas de arte que siguen no describen todas las mecánicas actuales.
 
 # Ocean VR — guía de arte 2D (Godot 4.x)
 
