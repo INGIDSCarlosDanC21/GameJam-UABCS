@@ -1,159 +1,39 @@
-# Ocean VR · Demo 1.0
+<div align="center">
 
-**[Página de descarga](https://ingidscarlosdanc21.github.io/GameJam-UABCS/)** · **[Archivos de la demo](https://github.com/INGIDSCarlosDanC21/GameJam-UABCS/releases/tag/demo-v1.0.0)**
+# OCEAN VR
 
-Demo para presentación y evaluación del cliente: Windows, PCVR y Meta Quest 2. Instrucciones y controles en la página de descarga. Los créditos de terceros no conceden permiso de reutilización comercial.
+### Demo 1.0 · Explora, fotografía y protege el océano
 
-> Estado actual: **1.0.0-demo**, candidata de cierre. Consulta [validación y pendientes](docs/RELEASE_1_0.md), [Quest 2](docs/QUEST2.md) y [créditos completos](assets/CREDITS.txt). Las instrucciones históricas de arte que siguen no describen todas las mecánicas actuales.
+**Elige tu versión y descarga directamente desde aquí.**
 
-# Ocean VR — guía de arte 2D (Godot 4.x)
+<a href="https://github.com/INGIDSCarlosDanC21/GameJam-UABCS/releases/download/demo-v1.0.0/OceanVR-1.0.0-demo-Quest2.apk"><img src="https://raw.githubusercontent.com/INGIDSCarlosDanC21/GameJam-UABCS/codex/ocean-vr/docs/download/quest.svg" alt="Descargar Ocean VR para Meta Quest 2" width="300" height="60"></a>
+<a href="https://github.com/INGIDSCarlosDanC21/GameJam-UABCS/releases/download/demo-v1.0.0/OceanVR-1.0.0-demo-Windows.zip"><img src="https://raw.githubusercontent.com/INGIDSCarlosDanC21/GameJam-UABCS/codex/ocean-vr/docs/download/pcvr.svg" alt="Descargar Ocean VR para PC y PCVR" width="300" height="60"></a>
 
-**Fondo 3D actualizado:** [guía del arrecife, animaciones y ajustes para Quest](FONDO_MARINO_3D.md).
-[Créditos de los modelos descargados](assets/models/reef/CREDITS.txt), también disponibles al elegir modo de juego.
+Quest 2: APK nativo · PC/PCVR: ZIP para Windows de 64 bits
 
-**Fecha del prototipo: 10 de septiembre de 2026.**  
-Prototipo: cabina estática, puntero láser VR, peces/basura flotantes y **Salud del Océano**.  
-Abrir la carpeta del proyecto en **Godot 4.3+** (probado en 4.7) con OpenXR. Escena principal: `scenes/Main.tscn`.  
-Los sprites actuales son **placeholders** (rectángulos de color generados en código). Esta guía explica cómo sustituirlos por `.png` finales **sin distorsionar** la relación de aspecto.
+<a href="https://ingidscarlosdanc21.github.io/GameJam-UABCS/"><img src="https://raw.githubusercontent.com/INGIDSCarlosDanC21/GameJam-UABCS/codex/ocean-vr/docs/download/web.svg" alt="Visitar la página web de Ocean VR" width="300" height="60"></a>
 
----
+[Instalación y controles](https://ingidscarlosdanc21.github.io/GameJam-UABCS/#instalacion) · [Todos los archivos y versiones](https://github.com/INGIDSCarlosDanC21/GameJam-UABCS/releases/tag/demo-v1.0.0)
 
-## 1. Convención de archivos
+</div>
 
-Crea (o usa) estas rutas:
+## Empieza a jugar
 
-| Uso | Ruta recomendada | Notas |
-|-----|------------------|--------|
-| Pez | `assets/art/fish.png` | Fondo **transparente**. PNG-8 o PNG-32. |
-| Basura | `assets/art/trash.png` | Igual. Silueta clara, se lee a ~2–6 m. |
-| Cielo 360 (opcional) | `assets/sky/ocean_360.ogv` | Vídeo equirectangular en bucle (Theora `.ogv` en Godot). |
+- **Meta Quest 2:** [descarga el APK](https://github.com/INGIDSCarlosDanC21/GameJam-UABCS/releases/download/demo-v1.0.0/OceanVR-1.0.0-demo-Quest2.apk) e instálalo mediante SideQuest. Compatible con mandos y seguimiento de manos.
+- **PC / PCVR:** [descarga el ZIP](https://github.com/INGIDSCarlosDanC21/GameJam-UABCS/releases/download/demo-v1.0.0/OceanVR-1.0.0-demo-Windows.zip), extrae todos los archivos y abre `OceanVR-1.0.0-demo.exe`. Para PCVR, conecta primero el visor y prepara OpenXR. También funciona sin visor, con ratón y teclado.
+- **Si ya tienes una instalación de prueba:** conserva tus fotos y progreso antes de migrar a un APK con otra firma. No desinstales la versión anterior sin respaldo.
 
-Nombres extra (variantes): `fish_01.png`, `trash_bottle.png`, etc. El código base espera **una** textura por tipo; las variantes se asignan en el Inspector o ampliando `_apply_placeholder()`.
+## La experiencia
 
-**Exportación 2D**
+Explora cinco ecosistemas en el modo educativo de cinco minutos o sigue descendiendo en arcade. Fotografía especies para tu almanaque, recoge basura y mejora tus filtrobots, red y linterna.
 
-- Recorta el lienzo al bounding box del dibujo (sin márgenes enormes).
-- No estires el PNG para “cuadrarlo”: exporta el **aspect ratio real** (p. ej. pez 256×128, botella 96×160).
-- Resolución útil en VR: **128–512 px** en el lado mayor. Más de 1024 suele ser desperdicio a esta escala.
-- Pixel art: múltiplos de 8/16 y filtro **Nearest**. Pintura suave: **Linear**.
+## Proyecto y documentación
 
----
+El desarrollo actual y la página web se mantienen en la rama [`codex/ocean-vr`](https://github.com/INGIDSCarlosDanC21/GameJam-UABCS/tree/codex/ocean-vr).
 
-## 2. Importar el PNG en Godot
+- [Validación y notas de la demo](https://github.com/INGIDSCarlosDanC21/GameJam-UABCS/blob/codex/ocean-vr/docs/RELEASE_1_0.md)
+- [Compilación para Quest 2](https://github.com/INGIDSCarlosDanC21/GameJam-UABCS/blob/codex/ocean-vr/docs/QUEST2.md)
+- [Créditos de recursos](https://github.com/INGIDSCarlosDanC21/GameJam-UABCS/blob/codex/ocean-vr/assets/CREDITS.txt)
+- [Guía histórica de arte del prototipo](https://github.com/INGIDSCarlosDanC21/GameJam-UABCS/blob/codex/ocean-vr/docs/GUIA_ARTE_HISTORICA.md)
 
-1. Copia el `.png` a `assets/art/`.
-2. En el FileSystem de Godot, selecciona el archivo.
-3. Import dock:
-   - **Compress → Mode:** `Lossless` (UI/sprites nítidos) o `VRAM Compressed` si hay muchos.
-   - **Fix Alpha Border:** on.
-   - Pixel art: **Filter** off (o `Nearest` en el Sprite3D).
-4. **Reimport**.
-
----
-
-## 3. Reemplazar el Sprite3D (peces y basura)
-
-Escena: `scenes/InteractableEntity.tscn` → nodo `Sprite3D`.
-
-### Opción A — Inspector (recomendado para arte)
-
-1. Abre `InteractableEntity.tscn`.
-2. Selecciona `Sprite3D`.
-3. En **Texture**, arrastra `fish.png` o `trash.png`.
-4. En el script `InteractableEntity.gd`, comenta o elimina la línea que pisa la textura en runtime:
-
-```gdscript
-_sprite.texture = _make_block_texture(color, kind == Kind.FISH)
-```
-
-Sustitúyela por algo así (dos texturas exportadas):
-
-```gdscript
-@export var fish_texture: Texture2D
-@export var trash_texture: Texture2D
-
-func _apply_placeholder() -> void:
-	_sprite.texture = fish_texture if kind == Kind.FISH else trash_texture
-	_sprite.pixel_size = 0.004
-	_sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-```
-
-En el Inspector de la escena, asigna `Fish Texture` y `Trash Texture`.
-
-### Opción B — Instancias distintas
-
-Duplica `InteractableEntity.tscn` → `Fish.tscn` / `Trash.tscn`, cada una con su PNG en `Sprite3D.texture`, y cambia el spawner para instanciar según `kind`.
-
----
-
-## 4. Aspect ratio automático (sin deformar)
-
-`Sprite3D` ya respeta el tamaño en píxeles de la textura:
-
-```
-ancho_mundo = texture.get_width()  * pixel_size
-alto_mundo  = texture.get_height() * pixel_size
-```
-
-El ratio **ancho/alto** es el del PNG. No hay que calcular nada a mano.
-
-### Qué hacer
-
-1. Deja **Scale** del `Sprite3D` en `(1, 1, 1)`.
-2. Ajusta **solo** `pixel_size` hasta que el objeto se vea del tamaño correcto en la cabina.
-3. No uses Scale X ≠ Scale Y para “encajar” en un cuadrado: eso **estira** la imagen.
-
-### Valor de partida
-
-| `pixel_size` | Efecto (textura 256 px de ancho) |
-|--------------|-----------------------------------|
-| `0.002` | ~0.51 m de ancho (pequeño, UI cercana) |
-| `0.004` | ~1.02 m (default del prototipo) |
-| `0.006` | ~1.54 m (se lee desde más lejos) |
-
-Si el pez se ve enorme o minúsculo al cambiar de 64×32 (placeholder) a 256×128 (arte), **baja o sube `pixel_size`**, no el scale. Ejemplo: placeholder 64 px a `0.004` → 0.256 m; arte 256 px al mismo `pixel_size` → 1.024 m (4×). Compensa: `0.004 * (64/256) = 0.001`.
-
-Fórmula para **mantener el mismo ancho en metros** al cambiar de textura:
-
-```
-nuevo_pixel_size = pixel_size_actual * (ancho_png_viejo / ancho_png_nuevo)
-```
-
-### CollisionShape3D
-
-Tras el arte final, ajusta el `BoxShape3D` al tamaño visual (Inspector → Shape → Size) para que el láser no “falle” fuera del dibujo ni requiera clics en el vacío.
-
----
-
-## 5. Billboard y recorte
-
-En `Sprite3D` del prototipo:
-
-- **Billboard:** Enabled (mira a la cámara; correcto para sprites 2D en falso 3D).
-- **Alpha Cut:** Discard (siluetas limpias en VR).
-- **Pixel Size:** ver tabla.
-- **Centered:** on.
-
-No actives `double_sided` si no hace falta; el billboard ya orienta el quad.
-
----
-
-## 6. Vídeo 360 del cielo
-
-1. Exporta equirectangular (2:1), p. ej. 2048×1024, codec **Theora** `.ogv`.
-2. Colócalo en `assets/sky/ocean_360.ogv`.
-3. `Main.gd` lo carga solo si el recurso existe; si no, el `ColorRect` del `SubViewport` hace de cielo plano.
-4. En `SkyViewport/VideoStreamPlayer`, deja **Loop** y **Expand** activados. El nodo está `visible = false` a propósito (alimenta el `ViewportTexture`, no la UI).
-
----
-
-## 7. Checklist rápido
-
-- [ ] PNG con alpha, recortado al dibujo.
-- [ ] Scale del Sprite3D = `(1,1,1)`.
-- [ ] Solo `pixel_size` para el tamaño en mundo.
-- [ ] Box colliders retocados al nuevo tamaño.
-- [ ] Filtro Nearest (pixel) o Linear (pintado).
-- [ ] Probar a 1.5–2 m de la cabina con el láser.
-
-Si una imagen se ve “aplastada”, casi siempre hay un Scale no uniforme o un PNG ya estirado en el export del DCC. Corrige el archivo, no el nodo.
+Demo para presentación y evaluación. Los recursos de terceros mantienen sus atribuciones; esta descarga no concede derechos de reutilización comercial.
