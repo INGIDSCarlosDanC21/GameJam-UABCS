@@ -1,6 +1,6 @@
 # Ocean VR 1.0 — candidata de cierre
 
-La numeración visible se unifica como `1.0.0-rc1`. Android conserva un versionCode creciente (6) para que los APK de prueba sigan actualizándose. RC significa candidata: no declara completadas las pruebas manuales ni los permisos de los recursos.
+La numeración visible se unifica como `1.0.0-rc2`. Android conserva un versionCode creciente (7) para que los APK de prueba sigan actualizándose. RC significa candidata: no declara completadas las pruebas manuales ni los permisos de los recursos.
 
 ## Comprobaciones técnicas
 
@@ -29,9 +29,17 @@ El APK release tiene una firma distinta a las pruebas debug ya instaladas. No se
 ## Pendientes de aceptación
 
 - La sesión Quest de 300 segundos está completada. Quedan caídas puntuales hasta 50 FPS y falta una sesión humana prolongada para aceptar la estabilidad térmica y de memoria.
-- Confirmación humana de lectura a baja resolución, manos izquierda/derecha, controladores y seguimiento óptico, postura sentada y retirada/colocación del visor.
-- Prueba de PCVR real. Las pruebas de escritorio no validan el enlace al visor.
+- El usuario confirmó comodidad en VR tanto con mandos como sin mandos. Quedan por comprobar explícitamente suspensión y retirada/colocación del visor.
+- El usuario confirmó PCVR real funcionando bien, sin tirones perceptibles o constantes.
 - Autor, fuente exacta y permisos de los recursos originales identificados como Seatruck/Subnautica, FNAF 3, Deltarune y sprites aportados. Los créditos no sustituyen una licencia. Ver `assets/CREDITS.txt`.
 - Passthrough/realidad aumentada queda fuera del alcance de 1.0; el almanaque ofrece visualización 3D dentro del juego.
 
-No crear una etiqueta `v1.0.0` definitiva mientras queden pendientes de aceptación. La candidata puede conservarse como `v1.0.0-rc1`.
+No crear una etiqueta `v1.0.0` definitiva mientras queden pendientes de aceptación. La candidata puede conservarse como `v1.0.0-rc2`.
+
+## Revisión RC2
+
+Tutorial reducido a dos acciones reales (limpiar y comprar un robot), seguido de ayudas contextuales breves con marcadores sobre objetos. Reiniciar ocupa una fila separada encima de Pausa, sin coincidir con la cámara ni Diario/Ajustes. Confirmación visual en escritorio y pruebas automáticas de separación, reinicio, tutorial y referencias eliminadas.
+
+Los paquetes actualizados se generan en `export/release/1.0.0-rc2/`, con ZIP de Windows, APK firmado, créditos, notas y sumas SHA256. El visor está desconectado: esta exportación no equivale a una nueva prueba ni instalación en Quest.
+
+La revisión local confirma que el submarino Seatruck sigue referenciado por Main.tscn y que SoundHub conserva los audios originales como alternativas de carga. No se han inventado permisos ni sustituido el arte principal sin recursos equivalentes. Sigue pendiente la aceptación del último tutorial y la disposición del botón en el visor.

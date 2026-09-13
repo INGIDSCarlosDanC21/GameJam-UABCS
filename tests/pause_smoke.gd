@@ -7,6 +7,7 @@ func run() -> void:
 	var main = load("res://scenes/Main.tscn").instantiate()
 	root.add_child(main)
 	current_scene = main
+	await create_timer(.3).timeout
 	var button = main.get_node("Cabin/PauseButton")
 	var pointer = main.get_node("XROrigin3D/RightController")
 	button.on_click()
@@ -24,6 +25,16 @@ func run() -> void:
 	var restart_button = main.get_node("Cabin/PauseRestart")
 	restart_button._process(0.0)
 	assert(restart_button.visible and restart_button.collision_layer == 2)
+	var head: Vector3 = main.get_node("XROrigin3D/XRCamera3D").global_position
+	var restart_direction: Vector3 = (restart_button.global_position-head).normalized()
+	for control in get_nodes_in_group("touch_buttons"):
+		if control == restart_button or not control.is_visible_in_tree(): continue
+		var direction: Vector3 = (control.global_position-head).normalized()
+		assert(restart_direction.dot(direction)<.985, "Restart overlaps " + str(control.name))
+	if DisplayServer.get_name() != "headless":
+		root.get_camera_3d().look_at(Vector3(0,.85,-.7))
+		await RenderingServer.frame_post_draw
+		root.get_texture().get_image().save_png("res://.godot/pause-layout.png")
 	restart_button.on_click()
 	assert(paused and gm.mode_selected)
 	restart_button.on_click()

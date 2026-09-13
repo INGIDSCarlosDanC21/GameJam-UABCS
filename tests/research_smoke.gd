@@ -122,10 +122,25 @@ func run() -> void:
 	check(tutorial.step==1,"tutorial advances after actual cleanup")
 	gm.robots_deployed=1
 	tutorial._process(.1)
-	photo.on_pointer_click(pointer)
+	check(tutorial.step==2 and not gm.tutorial_active,"two practical actions start the expedition immediately")
+	var money_before: int = gm.coins
+	tutorial._context(main.get_node("Cabin/ShopFlashlight"))
+	check("LINTERNA" in tutorial._label.text,"flashlight hint describes the actual control")
+	if DisplayServer.get_name() != "headless":
+		tutorial._process(.1)
+		await RenderingServer.frame_post_draw
+		root.get_texture().get_image().save_png("res://.godot/tutorial-context.png")
+	var disposable = Node3D.new()
+	main.add_child(disposable)
+	tutorial._hint("temporary", "test", disposable)
+	disposable.free()
 	tutorial._process(.1)
+	check(not tutorial._ring.visible,"freed hint target safely removes highlight")
+	check(gm.coins==money_before,"context hints never purchase upgrades")
+	paused=true
 	tutorial._process(.1)
-	check(tutorial.step==4 and not gm.tutorial_active,"tutorial waits for purchase, camera and photo")
+	check(not tutorial.visible,"tutorial hides during pause")
+	paused=false
 	gm.waste_removed=gm.WASTE_GOAL
 	for depth in [5,10,15,25]:
 		gm.advance_expedition(60)

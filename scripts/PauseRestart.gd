@@ -4,7 +4,9 @@ var _confirm_started := 0
 func _ready() -> void:
 	super._ready()
 	name = "PauseRestart"
-	position.x = -0.34
+	# Separate row above Pause: left is the camera, right is Journal / Settings.
+	position = Vector3(0, 0.92, -0.70)
+	basis = Basis.looking_at(position - Vector3(0, 1.6, 0), Vector3.UP)
 	hide()
 	collision_layer = 0
 func _process(_delta: float) -> void:
