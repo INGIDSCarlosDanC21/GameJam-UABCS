@@ -7,6 +7,10 @@ extends Node3D
 
 func _ready() -> void:
 	_setup_xr()
+	if OS.is_debug_build() and FileAccess.file_exists("user://qa_soak.flag"):
+		var soak := Node.new()
+		soak.set_script(preload("res://scripts/ReleaseSoak.gd"))
+		add_child.call_deferred(soak)
 	var flashlight := Area3D.new()
 	flashlight.set_script(preload("res://scripts/FlashlightShop.gd"))
 	var shape := CollisionShape3D.new()

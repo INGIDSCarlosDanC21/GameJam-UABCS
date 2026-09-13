@@ -16,7 +16,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 config/name="Ocean VR"
 config/description="Prototipo VR: cabina estática, peces/basura flotantes, economía y Salud del Océano. Creado el 10 de septiembre de 2026."
-config/version="1.0.0"
+config/version="1.0.0-rc1"
 run/main_scene="res://scenes/Main.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.png"

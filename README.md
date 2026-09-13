@@ -1,3 +1,5 @@
+> Estado actual: **1.0.0-rc1**, candidata de cierre. Consulta [validación y pendientes](docs/RELEASE_1_0.md), [Quest 2](docs/QUEST2.md) y [créditos completos](assets/CREDITS.txt). Las instrucciones históricas de arte que siguen no describen todas las mecánicas actuales.
+
 # Ocean VR — guía de arte 2D (Godot 4.x)
 
 **Fondo 3D actualizado:** [guía del arrecife, animaciones y ajustes para Quest](FONDO_MARINO_3D.md).

@@ -20,7 +20,7 @@ func _ready() -> void:
 	# Five loose schools create layered motion across the complete exterior view.
 	# All paths stay behind the gameplay lane at z=-7.
 	for school in 5:
-		for member in (4 if _mobile else 7):
+		for member in (2 if _mobile else 7):
 			var center := Vector3(-5.0 + school * 2.5, 1.15 + (school % 3) * 1.15, -12.0 - school * 3.6)
 			if school >= 3: center = Vector3(-17.0 if school == 3 else 17.0, 3.8, 2.0)
 			center += Vector3(_rng.randf_range(-0.7, 0.7), _rng.randf_range(-0.65, 0.65), _rng.randf_range(-0.6, 0.6))
@@ -62,7 +62,7 @@ func _plant_model(packed: PackedScene, kelp: bool) -> void:
 		var mesh := meshes[variant] as MeshInstance3D
 		var source_basis := _source_transform(mesh, source).basis
 		var box: AABB = Transform3D(source_basis, Vector3.ZERO) * mesh.get_aabb()
-		var count := (20 if _mobile else 34) if kelp else (2 if _mobile else 3)
+		var count := (8 if _mobile else 34) if kelp else (2 if _mobile else 3)
 		var data := MultiMesh.new()
 		data.transform_format = MultiMesh.TRANSFORM_3D
 		data.use_colors = true

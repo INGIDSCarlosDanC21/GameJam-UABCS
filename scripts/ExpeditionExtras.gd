@@ -63,7 +63,8 @@ func _ready() -> void:
 	for index in 4:
 		var page: String = ["Almanaque", "Récords", "Ajustes", "Práctica"][index]
 		_button(_panel, page, Vector3(-0.48 + index * 0.32, 0.44, 0.04), func(): _page = page; _render_page())
-	_button(_panel, "CERRAR", Vector3(0, -0.48, 0.04), close_menu)
+	_button(_panel, "CRÉDITOS", Vector3(-.32, -.48, .04), func(): _page = "Créditos"; _render_page())
+	_button(_panel, "CERRAR", Vector3(.32, -0.48, 0.04), close_menu)
 	_panel.hide()
 	_status = _label(self, Vector3(0, 0.98, -1.6), 0.00085)
 	_left = _label(self, Vector3(-0.7, 1.55, -1.4), 0.0009)
@@ -112,6 +113,8 @@ func _render_page() -> void:
 	_content.pixel_size = .0012
 	_preview = null
 	match _page:
+		"Créditos":
+			_content.text = "OCEAN VR\n\nModelos: Quaternius, Poly by Google, MiniPoly,\nDevice Lab, jeremy y autores del catálogo.\nAudio: Kenney, Ansimuz, MatiasVME,\nCleyton Kauffman, isaiah658 y colaboradores.\nFotos: Wikimedia Commons; autor y licencia\nen cada ficha del almanaque.\n\nRecursos originales identificados como\nSubnautica, FNAF 3 y Deltarune.\nMotor: Godot / OpenXR Vendors.\nCréditos completos en assets/CREDITS.txt."
 		"Almanaque":
 			_render_catalog()
 		"Récords":

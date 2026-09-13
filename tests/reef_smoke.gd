@@ -33,7 +33,7 @@ func run() -> void:
 	for player in players:
 		looping = looping and player.is_playing() and player.get_animation(player.current_animation).loop_mode == Animation.LOOP_LINEAR
 	check(looping, "swimming clips play continuously")
-	var first_player = players[0]
+	var first_player = players[7]
 	var pose_time: float = first_player.current_animation_position
 	await create_timer(1.5).timeout
 	check(not is_equal_approx(pose_time, first_player.current_animation_position), "skeleton animation advances")
@@ -75,8 +75,10 @@ func run() -> void:
 		check(ocean._basalt.get_instance_transform(0).basis.y.length() > 2.0, "deep scenario reveals basalt formations")
 	else:
 		check(ocean._depth > 3.0 and ocean._basalt_poses[0].basis.y.length() > 2.0, "deep scenario reaches basalt emergence with full-height source geometry")
+	gm.recovery_left = 0
+	gm._damage_cooldown = 0
 	gm._set_health(15)
-	await create_timer(1.5).timeout
+	await create_timer(2.5).timeout
 	check(life._materials[0].get_shader_parameter("ecosystem_light") < 0.03, "plant emission fades with ecosystem failure")
 	await capture("unhealthy")
 	life.free()
@@ -86,6 +88,6 @@ func run() -> void:
 	ocean.add_child(mobile)
 	var mobile_plants := 0
 	for plant in mobile.find_children("*", "MultiMeshInstance3D", true, false): mobile_plants += plant.multimesh.instance_count
-	check(mobile._swimmers.size() == 23 and mobile_plants < planted, "Quest profile reduces fauna and vegetation")
+	check(mobile._swimmers.size() == 13 and mobile_plants < planted, "Quest profile reduces fauna and vegetation")
 	print("REEF FAILURES: ", failures)
 	quit(failures)

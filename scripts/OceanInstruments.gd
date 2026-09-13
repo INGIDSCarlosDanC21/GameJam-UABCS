@@ -34,7 +34,7 @@ func _ready() -> void:
 	_footer=_label(Vector3(0,-.222,.02))
 func _label(at: Vector3) -> Label3D:
 	var label := Label3D.new()
-	label.font_size=28
+	label.font_size=36 if OS.has_feature("android") else 28
 	label.pixel_size=.00065
 	label.outline_size=2
 	label.layers=2

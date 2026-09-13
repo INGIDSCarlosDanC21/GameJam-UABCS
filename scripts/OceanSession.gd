@@ -161,6 +161,8 @@ func _process(delta: float) -> void:
 	var health := GameManager.ocean_health / 100.0
 	_depth_visual = lerpf(_depth_visual, float(GameManager.depth), 1.0 - exp(-delta))
 	var illumination := maxf(0.018, health * health) * pow(0.75, _depth_visual)
+	if OS.has_feature("android"):
+		illumination = lerpf(1.15,.008,smoothstep(3.0,15.0,_depth_visual)) * lerpf(.65,1.0,health)
 	illumination = lerpf(illumination,maxf(.9,illumination),_fever_blend)
 	illumination = lerpf(illumination,.025,_stun_blend)
 	if GameManager.play_mode == GameManager.PlayMode.EDUCATIONAL and _stun_blend < .01:
@@ -175,6 +177,10 @@ func _process(delta: float) -> void:
 		_env.fog_density = 0.018 + minf(0.035, _depth_visual * 0.006)
 		_env.background_energy_multiplier = lerpf(_env.background_energy_multiplier, illumination, 1.0 - exp(-2 * delta))
 		_env.ambient_light_energy = 0.45 * illumination
+		if OS.has_feature("android"):
+			_env.fog_light_color = Color("167eae").lerp(Color("000208"),smoothstep(3.0,15.0,_depth_visual))
+			_env.fog_density = lerpf(.009,.028,smoothstep(5.0,25.0,_depth_visual))
+			_env.ambient_light_energy = .8 * illumination
 	for light in _lights:
 		if not is_instance_valid(light): continue
 		var original: Array = _light_defaults[light]
@@ -191,7 +197,7 @@ func _process(delta: float) -> void:
 		GameManager.sound_requested.emit("alarm")
 	if alive:
 		var head := get_viewport().get_camera_3d()
-		_status.global_transform = head.global_transform * Transform3D(Basis.IDENTITY,Vector3(.43,-.06,-1.4))
+		_status.global_transform = head.global_transform * Transform3D(Basis.IDENTITY,(Vector3(.34,-.02,-1.05) if OS.has_feature("android") else Vector3(.43,-.06,-1.4)))
 		_mission.global_transform = head.global_transform * Transform3D(Basis.IDENTITY,Vector3(0,-.49,-1.4))
 		var seconds := ceili(GameManager.expedition_left)
 		_mission.text = "" if GameManager.play_mode == GameManager.PlayMode.ARCADE else "%02d:%02d  ·  %s" % [seconds / 60, seconds % 60, GameManager.mission_text()]

@@ -131,11 +131,15 @@ func _ellipsoid(parent: Node3D, at: Vector3, size: Vector3, color: Color, glowin
 	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	parent.add_child(node)
 	return node
+static func stage_for_depth(depth: int) -> int:
+	if depth <= 30: return mini(6, int(depth / 5))
+	return 1 + (int(depth / 5) - 1) % 6
+
 func _process(delta: float) -> void:
 	_clock += delta * GameManager.world_time_scale()
 	# Slow, soft electrical pulses rather than rapid full-screen flashes.
 	_storm_light.light_energy = (0.5 + pow(maxf(0, sin(_clock * 2.0)), 4.0) * 2.0) if GameManager.storm_left > 0 else 0.0
-	var stage := mini(6, int(GameManager.depth / 5))
+	var stage := stage_for_depth(GameManager.depth)
 	if stage != _stage:
 		_stage = stage
 		_build_special()

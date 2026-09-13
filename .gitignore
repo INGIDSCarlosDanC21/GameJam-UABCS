@@ -6,3 +6,5 @@ export/
 android/
 *~RF*.TMP
 /libgodotopenxrvendors.dll
+*.jks
+*.keystore

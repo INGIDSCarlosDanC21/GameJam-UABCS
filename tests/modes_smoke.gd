@@ -46,6 +46,7 @@ func run() -> void:
 	await create_timer(0.5).timeout
 	check(gm.play_mode == 1 and not current_scene.has_node("ModeMenu"), "restart preserves chosen mode")
 	gm.select_mode(0)
+	gm.tutorial_active = false
 	gm.advance_expedition(301)
 	check(gm.expedition_finished, "educational mode retains deadline")
 	print("MODE FAILURES: ", failures)

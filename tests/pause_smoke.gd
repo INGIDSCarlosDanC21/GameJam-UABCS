@@ -25,6 +25,11 @@ func run() -> void:
 	restart_button._process(0.0)
 	assert(restart_button.visible and restart_button.collision_layer == 2)
 	restart_button.on_click()
+	assert(paused and gm.mode_selected)
+	restart_button.on_click()
+	assert(paused)
+	restart_button._confirm_started -= 600
+	restart_button.on_click()
 	await process_frame
 	await process_frame
 	assert(not paused and not gm.mode_selected)

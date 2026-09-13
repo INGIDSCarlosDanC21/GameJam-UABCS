@@ -129,6 +129,9 @@ func _build_caves(material: Material) -> void:
 func _material(shader: Shader) -> ShaderMaterial:
 	var material := ShaderMaterial.new()
 	material.shader = shader
+	if OS.has_feature("android"):
+		if shader == preload("res://shaders/ocean_floor.gdshader"): material.shader = preload("res://shaders/quest_ocean_floor.gdshader")
+		elif shader == preload("res://shaders/reef_rock.gdshader"): material.shader = preload("res://shaders/quest_reef_rock.gdshader")
 	_materials.append(material)
 	return material
 

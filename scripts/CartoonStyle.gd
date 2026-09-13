@@ -63,11 +63,13 @@ func _style(node: Node) -> void:
 				node.set_surface_override_material(i, glass)
 				var curved_glass := ShaderMaterial.new()
 				curved_glass.shader = preload("res://shaders/cabin_glass.gdshader")
+				if OS.has_feature("android"): curved_glass.shader = preload("res://shaders/quest_glass.gdshader")
 				node.set_surface_override_material(i, curved_glass)
 				continue
 			if source is StandardMaterial3D and source.transparency == BaseMaterial3D.TRANSPARENCY_DISABLED and source.shading_mode != BaseMaterial3D.SHADING_MODE_UNSHADED:
 				var mat := ShaderMaterial.new()
 				mat.shader = preload("res://shaders/submarine_gray.gdshader")
+				if OS.has_feature("android"): mat.shader = preload("res://shaders/quest_submarine.gdshader")
 				_water_materials.append(mat)
 				mat.set_shader_parameter("base_color", source.albedo_color)
 				if source.albedo_texture: mat.set_shader_parameter("paint", source.albedo_texture)

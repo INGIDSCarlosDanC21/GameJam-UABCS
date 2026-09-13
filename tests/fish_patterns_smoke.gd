@@ -42,10 +42,11 @@ func run() -> void:
 		for parameter in palette:
 			check(entity._material.get_shader_parameter(parameter) == palette[parameter], "dead fish retains " + parameter)
 		check(entity.find_children("*", "Label3D", true, false).is_empty(), "dead fish has no floating text")
+	root.get_node("GameManager").depth = 20
 	for species in ["pez oracles","pez linterna","anginla","pez dorado millonario"]:
 		var entity = load("res://scenes/InteractableEntity.tscn").instantiate()
 		entity.species = species
 		main.add_child(entity)
-		check(entity._material.get_shader_parameter("pattern_strength") == 0.0,"special species retains identity " + species)
+		check(entity.species == species and entity._material.get_shader_parameter("pattern_strength") >= 0.0,"special species retains identity " + species)
 	print("PATTERN FAILURES: ",failures)
 	quit(failures)

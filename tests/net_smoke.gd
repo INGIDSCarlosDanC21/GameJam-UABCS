@@ -19,10 +19,11 @@ func run() -> void:
 	main.get_node("Spawner").set_process(false)
 	gm.coins = 0
 	check(not gm.buy_net() and gm.net_level == 0, "net cannot be bought without funds")
-	gm.coins = 500
+	gm.coins = 50000
+	var price: int = gm.net_cost()
 	var base: float = gm.capture_duration(0.8, true)
 	main.get_node("OceanSession/ShopNet").on_click()
-	check(gm.net_level == 1 and gm.coins == 485 and gm.capture_duration(0.8, true) < base, "net button buys faster capture")
+	check(gm.net_level == 1 and gm.coins == 50000 - price and gm.capture_duration(0.8, true) < base, "net button buys faster capture")
 	for index in 4: gm.buy_net()
 	check(gm.net_level == 5 and not gm.buy_net() and gm.capture_duration(0.8, true) < 0.25, "net caps at five effective upgrades")
 	check(gm.capture_duration(0.5, false) == 0.5, "net preserves trash capture time")
