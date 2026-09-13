@@ -1,3 +1,9 @@
+# Ocean VR · Demo 1.0
+
+**[Descargar para Windows y Quest](https://ingidscarlosdanc21.github.io/GameJam-UABCS/)** · **[Release de la demo](https://github.com/INGIDSCarlosDanC21/GameJam-UABCS/releases/tag/demo-v1.0.0)**
+
+La versión de presentación y su página se mantienen en la rama `codex/ocean-vr`. Instrucciones, controles y créditos en la página de descarga.
+
 # Ocean VR — guía de arte 2D (Godot 4.x)
 
 **Fecha del prototipo: 10 de septiembre de 2026.**  
