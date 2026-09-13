@@ -14,6 +14,8 @@ El preset `Meta Quest` genera una aplicación Android ARM64 nativa con OpenXR y 
 
 La compilación no sustituye pruebas físicas: comprobar ambos ojos, altura sentado, manos/controladores, botones de compra y pausa, audio, alarma al 50 %, fotografías y fluidez a profundidad 20–30. No se ha conectado un Quest durante esta entrega.
 
+Pruebas automatizadas comprobadas: `quest_fixes_smoke`, `telemetry_smoke`, `research_smoke`, `pause_smoke`, `marine_qol_smoke` y `session_smoke`. Cubren el parpadeo de emergencia y su recuperación, colores originales del pez globo, texturas independientes por superficie, fotografías, barra y controles. `performance_art_smoke` también pasó en Compatibility con la simulación activa; sus tiempos corresponden al PC de desarrollo, no al Quest.
+
 ## Modelos y futura realidad aumentada
 
 `SpeciesCatalog.model()` devuelve modelos centrados y normalizados, y `MarineMaterials.prepare()` conserva los materiales y texturas independientes de cada superficie sin modificar los recursos originales. Se pueden reutilizar fuera del escenario submarino. El almanaque actual muestra una vista 3D dentro de VR; todavía no activa passthrough ni representa la habitación real. Oracle mantiene un aviso de modelo pendiente.
