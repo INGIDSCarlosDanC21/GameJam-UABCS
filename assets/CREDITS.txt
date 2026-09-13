@@ -1,0 +1,176 @@
+OCEAN VR — CRÉDITOS Y PROCEDENCIA
+
+Recursos aportados originalmente al proyecto:
+- seatruck_subnautica.glb: nombre del archivo identifica el Seatruck de Subnautica. Autor de esta copia, enlace de descarga y permiso no documentados.
+- deltarune-explosion.mp3: identificado por su nombre como sonido de Deltarune. Copia y permiso no documentados.
+- FNAF 3 ventilation error.mp3: identificado por su nombre como sonido de Five Nights at Freddy’s 3. Copia y permiso no documentados.
+- Sprites en assets/art: aportados al proyecto; autoría y permiso pendientes de documentar.
+Estos nombres indican procedencia aparente, no una licencia ni respaldo de sus titulares. Proyecto no comercial según su responsable.
+
+Motor: Godot Engine, licencia MIT — https://godotengine.org/license/
+Extensión OpenXR Vendors: licencias incluidas en addons/godotopenxrvendors.
+
+MODELOS 3D DEL ARRECIFE — Ocean VR
+
+Animated Fish Pack — Quaternius
+Fish1, Fish2, Fish3, Dolphin y Manta ray.
+https://quaternius.com/packs/animatedfish.html
+https://opengameart.org/content/animated-fish
+CC0 1.0: https://creativecommons.org/publicdomain/zero/1.0/
+Originales FBX con animación Swim; adaptaciones en el juego: escala, pivote,
+velocidad de animación, fase y trayectorias continuas. Archivo original:
+https://opengameart.org/sites/default/files/Animated%20Fish%20Pack%20by%20%40Quaternius.zip
+
+Coral Reef Set3 — MiniPoly
+https://poly.pizza/m/UyswwdHFiL
+Coral Reef Set2 — MiniPoly
+https://poly.pizza/m/HdrPoAyuCJ
+Coral Reef Set6 — MiniPoly
+https://poly.pizza/m/hOBkCGKjlo
+Los tres: CC BY 3.0, https://creativecommons.org/licenses/by/3.0/
+Originales GLB. Adaptaciones en el juego: extracción de mallas para instancias,
+escala, posición, paleta de color y material animado. Sin modificar el GLB.
+
+Kelp — Poly by Google
+https://poly.pizza/m/4cFllH6Iazk
+CC BY 3.0: https://creativecommons.org/licenses/by/3.0/
+Original GLB. Adaptaciones: escala, material, variaciones y balanceo por shader.
+
+Orange Coral — Device Lab
+https://poly.pizza/m/3HEc6LvqCJd
+CC BY 3.0: https://creativecommons.org/licenses/by/3.0/
+Original GLB. Adaptaciones: escala, material, paleta y balanceo por shader.
+
+Descargados el 11 de septiembre de 2026. No se afirma respaldo de sus autores.
+Copias de licencias: licenses/Quaternius.txt y licenses/CC-BY-3.0.txt.
+Estos créditos se refieren a los modelos nuevos del fondo; no sustituyen las
+licencias de los demás recursos del proyecto.
+
+
+Downloaded models. Mesh unchanged; scale and motion adjusted in game.
+
+CC BY 3.0: https://creativecommons.org/licenses/by/3.0/
+
+CC0: https://creativecommons.org/publicdomain/zero/1.0/
+
+Octopus: Poly by Google — CC-BY 3.0
+https://poly.pizza/m/flkOBUVpPHg
+
+Clownfish: Quaternius — CC0 1.0
+https://poly.pizza/m/769fHo3eEB
+
+Anglerfish: Quaternius — CC0 1.0
+https://poly.pizza/m/MRjSlwCjHM
+
+BlueTang: Quaternius — CC0 1.0
+https://poly.pizza/m/TQaMo8GTJl
+
+Goldfish: Quaternius — CC0 1.0
+https://poly.pizza/m/qS6CgsWFAh
+
+Puffer: Quaternius — CC0 1.0
+https://poly.pizza/m/UKHtgpxTOk
+
+Jellyfish: Poly by Google — CC-BY 3.0
+https://poly.pizza/m/dA5osnS0Rzj
+
+Seal: jeremy — CC-BY 3.0
+https://poly.pizza/m/428MKgODp0H
+
+Eel: Poly by Google — CC-BY 3.0
+https://poly.pizza/m/dDzthiG8nr9
+
+Snail: Poly by Google — CC-BY 3.0
+https://poly.pizza/m/aZ_cT-AIu2y
+
+# Fotografías del almanaque
+
+Fotografías descargadas de Wikimedia Commons; no se modificaron salvo el tamaño de miniatura servido por Commons. Los animales fantásticos usan un referente real, no una identificación científica del personaje. Textos humorísticos originales de Ocean VR.
+
+- **pez azul** — Paracanthurus hepatus: DerHans04. CC BY-SA 3.0. [Fuente](https://commons.wikimedia.org/wiki/File:Paletten-Doktorfisch_M%C3%BCnster.JPG) [Licencia](https://creativecommons.org/licenses/by-sa/3.0)
+
+- **pez naranja** — Carassius auratus: לינה אבוגוש. CC BY-SA 3.0. [Fuente](https://commons.wikimedia.org/wiki/File:Gold_fish1.jpg) [Licencia](https://creativecommons.org/licenses/by-sa/3.0)
+
+- **anginla** — Electrophorus electricus: Steven G. Johnson. CC BY-SA 3.0. [Fuente](https://commons.wikimedia.org/wiki/File:Electric-eel.jpg) [Licencia](http://creativecommons.org/licenses/by-sa/3.0/)
+
+- **pez linterna** — Melanocetus sp. (referente): Ryan Somma. CC BY 2.0. [Fuente](https://commons.wikimedia.org/wiki/File:Melanocetus_johnsonii1.jpg) [Licencia](https://creativecommons.org/licenses/by/2.0)
+
+- **pez dorado millonario** — Carassius auratus: לינה אבוגוש. CC BY-SA 3.0. [Fuente](https://commons.wikimedia.org/wiki/File:Gold_fish1.jpg) [Licencia](https://creativecommons.org/licenses/by-sa/3.0)
+
+- **pulpo** — Octopus vulgaris: albert kok. CC BY-SA 3.0. [Fuente](https://commons.wikimedia.org/wiki/File:Octopus2.jpg) [Licencia](https://creativecommons.org/licenses/by-sa/3.0)
+
+- **pez oracles** — Synchiropus splendidus: Luc Viatour. CC BY-SA 3.0. [Fuente](https://commons.wikimedia.org/wiki/File:Synchiropus_splendidus_2_Luc_Viatour.jpg) [Licencia](http://creativecommons.org/licenses/by-sa/3.0/)
+
+- **foca** — Phoca vitulina: Charles J. Sharp. CC BY-SA 4.0. [Fuente](https://commons.wikimedia.org/wiki/File:Common_seal_(Phoca_vitulina)_2.jpg) [Licencia](https://creativecommons.org/licenses/by-sa/4.0)
+
+- **caracol** — Littorina littorea: Photographed by Guttorm Flatabø (user:dittaeva).. CC BY-SA 3.0. [Fuente](https://commons.wikimedia.org/wiki/File:Sea_snail,_underneath,_full_view.jpg) [Licencia](http://creativecommons.org/licenses/by-sa/3.0/)
+
+- **medusa** — Aurelia aurita: Luc Viatour. CC BY-SA 3.0. [Fuente](https://commons.wikimedia.org/wiki/File:Aurelia_aurita_(Cnidaria)_Luc_Viatour.jpg) [Licencia](https://creativecommons.org/licenses/by-sa/3.0)
+
+- **pez globo** — Arothron hispidus: Diego Delso. CC BY-SA 4.0. [Fuente](https://commons.wikimedia.org/wiki/File:Pez_globo_(Arothron_hispidus),_Anilao,_Filipinas,_2023-08-24,_DD_53.jpg) [Licencia](https://creativecommons.org/licenses/by-sa/4.0)
+
+- **delfín** — Tursiops truncatus: NASA
+. Public domain. [Fuente](https://commons.wikimedia.org/wiki/File:Tursiops_truncatus_01-cropped.jpg) [Licencia]()
+
+- **tiburón** — Carcharodon carcharias: Pterantula (Terry Goss) at en.wikipedia. CC BY 2.5. [Fuente](https://commons.wikimedia.org/wiki/File:White_shark.jpg) [Licencia](https://creativecommons.org/licenses/by/2.5)
+
+- **pulpo gigante** — Enteroctopus dofleini: NOAA/R. N. Lea [1]. Public domain. [Fuente](https://commons.wikimedia.org/wiki/File:Enteroctopus_dolfeini.jpg) [Licencia]()
+
+- **ballena** — Megaptera novaeangliae: Juan Cruzado Cortés. CC BY 4.0. [Fuente](https://commons.wikimedia.org/wiki/File:Humpback_whale_breaching_off_Cabo_San_Lucas.jpg) [Licencia](https://creativecommons.org/licenses/by/4.0)
+
+- **mantarraya gigante** — Mobula birostris: jon hanson from london, UK. CC BY-SA 2.0. [Fuente](https://commons.wikimedia.org/wiki/File:Manta_birostris-Thailand4.jpg) [Licencia](https://creativecommons.org/licenses/by-sa/2.0)
+
+- **pulpo abisal** — Grimpoteuthis: NOAA Okeanos Explorer. Public domain. [Fuente](https://commons.wikimedia.org/wiki/File:Dumbo-hires_(cropped).jpg) [Licencia]()
+
+- **pez payaso** — Amphiprion ocellaris: Ritiks. CC BY-SA 3.0. [Fuente](https://commons.wikimedia.org/wiki/File:Clown_fish_in_the_Andaman_Coral_Reef.jpg) [Licencia](https://creativecommons.org/licenses/by-sa/3.0)
+
+# Audio arcade — procedencia
+
+Descargado el 11 de septiembre de 2026. Se han copiado los OGG sin recortar ni recodificar; la mezcla y variación de tono se aplican dentro de Godot.
+
+- `expedition.ogg`: **Going Up**, Luis Zuno / Ansimuz. Página del autor: https://opengameart.org/content/going-up-adventure-chiptune . Publicado como CC0. Archivo: https://opengameart.org/sites/default/files/going_up_files_0.zip (original `Going Up.ogg`). Se conserva la licencia incluida en `Ansimuz.txt`.
+- `fever.ogg`: **Chiptune Loop - Crazy**, MatiasVME. Página: https://opengameart.org/content/chiptune-loop-crazy . Publicado como CC0. Archivo: https://opengameart.org/sites/default/files/Crazy_0.ogg . Licencia: https://creativecommons.org/publicdomain/zero/1.0/ . Renombrado únicamente.
+- Los doce OGG restantes conservan sus nombres del paquete **Interface Sounds 1.0**, Kenney: https://kenney.nl/assets/interface-sounds . Licencia CC0 incluida en `Kenney.txt`.
+
+El motor submarino y la alarma de dos notas se sintetizan mediante `scripts/ArcadeAudio.gd`, sin muestras externas. El retumbo del descenso ya era generado por el proyecto.
+
+Los archivos anteriores de `assets/audio/music` y `assets/audio/effects` se conservan como material del usuario, pero ya no se cargan por defecto y se excluyen de los presets de exportación. Esta selección de audio no certifica las licencias de los modelos, sprites u otros recursos del juego.
+
+
+# Nueva selección submarina
+
+- Underwater Theme II — Cleyton Kauffman, CC0. https://opengameart.org/content/underwater-theme-ii
+- Underwater Ambient Pad — isaiah658, CC0. https://opengameart.org/content/underwater-ambient-pad
+
+Los bucles Ogg reemplazan la selección anterior durante el juego. Volumen, tono y transición se adaptan en reproducción.
+
+# Fauna descargada
+
+Shark y Whale — Quaternius, Animated Fish Bundle, CC0.
+https://poly.pizza/bundle/Animated-Fish-Bundle-ZkGbjS8m8g
+https://poly.pizza/m/AyHTK3zUSG
+https://poly.pizza/m/JGFwp6xWgk
+
+Adaptaciones: escala, colocación y reproducción de animaciones. Medusas, peces linterna y fauna del fondo se construyen con geometría ligera propia.
+
+
+Monster by mikeask — CC0
+https://opengameart.org/content/monster-5
+Used as fictional giant-animal encounter sound, pitch varied in game.
+
+
+Humpbackwhale2.ogg by Spyrogumas, CC0 1.0
+https://commons.wikimedia.org/wiki/File:Humpbackwhale2.ogg
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Dolphin Sounds: ZooSpensefull.com, extracted and noise reduced by AntumDeluge.
+https://opengameart.org/content/dolphin-sounds
+Distributed here under CC BY-SA 4.0 (as listed on the source page).
+https://creativecommons.org/licenses/by-sa/4.0/
+Files unmodified; game controls playback volume.
+
+
+Health normal by sbed — Game-icons.net, CC BY 3.0
+https://game-icons.net/1x1/sbed/health-normal.html
+https://creativecommons.org/licenses/by/3.0/
+Icon tinted in game.

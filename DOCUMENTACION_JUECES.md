@@ -52,7 +52,7 @@ El fondo utiliza un entorno oceánico 360 y la cabina procede de un modelo subma
 ## Controles
 
 - **VR:** mando derecho, puntero láser y gatillo.
-- **PC:** ratón para apuntar e interactuar.
+- **PC:** primera persona con `WASD` para moverse, ratón para mirar, `Shift` para acelerar, `Espacio`/`Ctrl` para subir o bajar y clic izquierdo para interactuar. `Esc` libera o recupera el ratón.
 - **Reinicio:** aparece al agotarse la Salud del Océano.
 
 ## Estructura relevante

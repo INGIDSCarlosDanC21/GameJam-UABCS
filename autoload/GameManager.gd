@@ -15,10 +15,15 @@ const EXPEDITION_SECONDS := 300.0
 enum PlayMode { EDUCATIONAL, ARCADE }
 var play_mode: PlayMode = PlayMode.EDUCATIONAL
 var mode_selected := false
+var practice_mode := false
+var tutorial_active := false
+const ECOSYSTEMS := ["ARRECIFE CORALINO", "BOSQUE DE ALGAS", "MAR ABIERTO", "ZONA CREPUSCULAR", "ABISMO"]
 
 func select_mode(value: PlayMode) -> void:
+	PlayerJournal.expedition_photos.clear()
 	play_mode = value
 	mode_selected = true
+	tutorial_active = value == PlayMode.EDUCATIONAL
 const WASTE_GOAL := 15
 const HEALTH_GOAL := 70.0
 const CONSERVATION_SECONDS := 30.0
@@ -33,6 +38,36 @@ const FILTER_COST := 20
 var coins := 25
 var ocean_health := 100.0
 var bait_level := 0
+var net_level := 0
+var flashlight_level := 0
+var storm_left := 0.0
+var storm_wait := 65.0
+var recovery_left := 0.0
+var _damage_cooldown := 0.0
+var _pollution_clock := 0.0
+func flashlight_cost() -> int:
+	return 250 * (flashlight_level + 1) * (flashlight_level + 1)
+func buy_flashlight() -> bool:
+	if is_run_over() or flashlight_level >= 5 or coins < flashlight_cost(): return false
+	coins -= flashlight_cost()
+	flashlight_level += 1
+	coins_changed.emit(coins)
+	sound_requested.emit("flashlight")
+	return true
+const MAX_NET_LEVEL := 5
+
+func net_cost() -> int:
+	return 150 * (net_level + 1) * (net_level + 1)
+
+func buy_net() -> bool:
+	if is_run_over() or net_level >= MAX_NET_LEVEL or coins < net_cost(): return false
+	coins -= net_cost()
+	net_level += 1
+	coins_changed.emit(coins)
+	return true
+
+func capture_duration(base: float, is_fish: bool) -> float:
+	return maxf(0.10, base / (1.0 + net_level * 0.45)) if is_fish else base
 var filter_level := 0
 var level := 1
 var depth := 0
@@ -50,6 +85,23 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	if is_run_over(): return
+	recovery_left = maxf(0.0, recovery_left - delta)
+	_damage_cooldown = maxf(0.0, _damage_cooldown - delta)
+	_pollution_clock += delta
+	if _pollution_clock >= 2.0:
+		_pollution_clock = 0.0
+		var neglected := 0
+		for trash in get_tree().get_nodes_in_group("trash"):
+			if not trash._clicked and trash.collision_layer != 0 and trash._age >= 8.0: neglected += 1
+		if neglected >= 2:
+			var pressure := minf(7.0, neglected * (0.55 + minf(depth,30) * 0.045))
+			_set_health(ocean_health - pressure * (0.65 if play_mode == PlayMode.EDUCATIONAL else 1.0))
+	storm_left = maxf(0.0, storm_left - delta)
+	storm_wait -= delta
+	if storm_wait <= 0.0:
+		storm_left = 12.0
+		storm_wait = randf_range(75.0, 130.0)
+		sound_requested.emit("storm")
 	advance_expedition(delta)
 	stun_left = maxf(0, stun_left - delta)
 	slow_time_left = maxf(0, slow_time_left - delta)
@@ -59,20 +111,27 @@ func _process(delta: float) -> void:
 			fever_changed.emit(false)
 
 func difficulty() -> float:
+	if play_mode == PlayMode.EDUCATIONAL: return 1.0 + minf(.5,depth*.02)
 	return minf(2.3, 1.0 + (level - 1) * 0.05 + depth * 0.12)
 
 func is_run_over() -> bool:
 	return not mode_selected or defeated or expedition_finished
 
 func advance_expedition(delta: float) -> void:
-	if is_run_over() or play_mode == PlayMode.ARCADE: return
+	if is_run_over() or play_mode == PlayMode.ARCADE or tutorial_active: return
 	var elapsed := minf(delta, expedition_left)
 	expedition_left = maxf(0.0, expedition_left - elapsed)
+	var segment := mini(4,int((EXPEDITION_SECONDS-expedition_left)/60.0))
+	var scheduled_depth: int = [0,5,10,15,25][segment]
+	if depth != scheduled_depth:
+		depth = scheduled_depth
+		depth_changed.emit(depth)
+		sound_requested.emit("depth")
 	if waste_removed >= WASTE_GOAL and robots_deployed > 0 and ocean_health >= HEALTH_GOAL:
 		conservation_time = minf(CONSERVATION_SECONDS, conservation_time + elapsed)
 	else:
 		conservation_time = 0.0
-	if conservation_time >= CONSERVATION_SECONDS or expedition_left <= 0.0:
+	if expedition_left <= 0.0:
 		expedition_finished = true
 		expedition_success = conservation_time >= CONSERVATION_SECONDS
 		fever_left = 0.0
@@ -90,8 +149,15 @@ func mission_text() -> String:
 	return "3/3 · CONSERVA SALUD ≥70%%  %d/30 s" % int(conservation_time)
 
 func cleaner_quality() -> int:
-	# The Filtrobot evolves at levels 5 and 10; its maximum quality is level 3.
-	return clampi(1 + level / 5, 1, 3)
+	# Every ten player levels unlocks the next robot quality.
+	return clampi(1 + int(level / 10), 1, 3)
+
+func cleaner_limit() -> int:
+	# Start with five persistent Filtrobots and gain five more capacity every ten levels.
+	return mini(30, 5 + int(level / 10) * 5)
+
+func bait_cost() -> int:
+	return BAIT_COST + bait_level * 10
 
 func progress() -> void:
 	if is_run_over(): return
@@ -112,12 +178,13 @@ func start_fever() -> void:
 func start_slow_time() -> void:
 	if is_run_over(): return
 	slow_time_left = 5.0
+	sound_requested.emit("oracle")
 
 func world_time_scale() -> float:
-	return 0.38 if slow_time_left > 0 else 1.0
+	return lerpf(1.0,.38,minf(clampf((5.0-slow_time_left)/.5,0,1),clampf(slow_time_left/.6,0,1))) if slow_time_left > 0 else 1.0
 
 func can_descend() -> bool:
-	return not is_run_over() and level >= (depth + 1) * 5
+	return play_mode == PlayMode.ARCADE and not is_run_over() and level >= (depth + 1) * 5
 
 func descend() -> bool:
 	if not can_descend(): return false
@@ -129,19 +196,19 @@ func descend() -> bool:
 func clean_trash(manual: bool = true) -> void:
 	if is_run_over(): return
 	waste_removed += 1
+	progress()
 	if manual:
 		_add_coins(5)
-		progress()
 		sound_requested.emit("trash")
-	_set_health(ocean_health + (7.0 if manual else 4.0) + mini(filter_level, 3))
+	_set_health(ocean_health + (3.5 if manual else 0.65) + mini(filter_level, 3) * 0.15)
 
 func ignore_trash() -> void:
 	if not is_run_over():
-		_set_health(ocean_health - (8.0 + depth * 2.0) * difficulty() / (1.0 + filter_level * 0.4))
+		_set_health(ocean_health - minf(10.0, (4.0 + depth * 0.18) * difficulty()) / (1.0 + mini(filter_level,3) * 0.08))
 
 func fish_stats(rarity: int, size_factor: float, aura: int = 0) -> Dictionary:
 	var mult: float = [1.0, 1.5, 2.2, 3.5][clampi(rarity, 0, 3)]
-	return {"reward": maxi(1, roundi((3 + bait_level) * mult * size_factor * (1.0 + aura * 0.6) * (2.0 if fever_left > 0 else 1.0))), "damage": 0.0 if fever_left > 0 else 1.2 * mult * size_factor}
+	return {"reward": maxi(1, roundi((3 + bait_level) * mult * size_factor * (2.0 if fever_left > 0 else 1.0))), "damage": 0.0 if fever_left > 0 else 1.2 * mult * size_factor}
 
 func catch_fish(rarity: int = 0, size_factor: float = 1.0, aura: int = 0) -> void:
 	if is_run_over(): return
@@ -156,8 +223,8 @@ func let_fish_go() -> void:
 	if not is_run_over(): _set_health(ocean_health + 0.5)
 
 func buy_bait() -> bool:
-	if is_run_over() or coins < BAIT_COST: return false
-	coins -= BAIT_COST
+	if is_run_over() or coins < bait_cost(): return false
+	coins -= bait_cost()
 	bait_level += 1
 	coins_changed.emit(coins)
 	return true
@@ -166,7 +233,7 @@ func filter_cost() -> int:
 	return FILTER_COST + filter_level * 10 + depth * 10
 
 func buy_filter() -> bool:
-	if is_run_over() or coins < filter_cost() or active_cleaners >= 10: return false
+	if is_run_over() or coins < filter_cost() or active_cleaners >= cleaner_limit(): return false
 	coins -= filter_cost()
 	filter_level += 1
 	active_cleaners += 1
@@ -181,6 +248,10 @@ func _add_coins(amount: int) -> void:
 
 func _set_health(value: float) -> void:
 	if is_run_over(): return
+	if (practice_mode or tutorial_active) and value < ocean_health: return
+	if value < ocean_health:
+		if recovery_left > 0.0 or _damage_cooldown > 0.0: return
+		_damage_cooldown = 0.65
 	ocean_health = clampf(value, 0, MAX_HEALTH)
 	ocean_health_changed.emit(ocean_health)
 	_apply_audio()
@@ -196,6 +267,10 @@ func _apply_audio() -> void:
 	if bus >= 0: AudioServer.set_bus_volume_db(bus, lerpf(-9.0, 0.0, ocean_health / MAX_HEALTH))
 
 func restart() -> void:
+	tutorial_active = false
+	PlayerJournal.update_records()
+	PlayerJournal.save_progress()
+	practice_mode = false
 	expedition_left = EXPEDITION_SECONDS
 	expedition_finished = false
 	expedition_success = false
@@ -206,6 +281,13 @@ func restart() -> void:
 	coins = 25
 	ocean_health = 100
 	bait_level = 0
+	net_level = 0
+	flashlight_level = 0
+	storm_left = 0.0
+	storm_wait = 65.0
+	recovery_left = 0.0
+	_damage_cooldown = 0.0
+	_pollution_clock = 0.0
 	filter_level = 0
 	level = 1
 	depth = 0

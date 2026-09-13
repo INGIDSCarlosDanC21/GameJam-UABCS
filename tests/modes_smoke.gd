@@ -18,6 +18,14 @@ func run() -> void:
 		root.get_texture().get_image().save_png("res://.godot/mode-menu.png")
 	check(main.has_node("ModeMenu") and get_nodes_in_group("entities").is_empty(), "selection prevents gameplay spawning")
 	check(gm.expedition_left == 300, "selection does not consume time")
+	var menu = main.get_node("ModeMenu")
+	menu._buttons[2].on_click()
+	check(menu._credits.visible and menu._buttons[0].collision_layer == 0, "credits show attribution without hidden mode targets")
+	if DisplayServer.get_name() != "headless":
+		await RenderingServer.frame_post_draw
+		root.get_texture().get_image().save_png("res://.godot/reef-credits.png")
+	menu._buttons[2].on_click()
+	check(not menu._credits.visible and menu._buttons[0].collision_layer == 2, "return from credits restores mode selection")
 	main.get_node("ModeMenu").choose(1)
 	await process_frame
 	gm.advance_expedition(1000)
@@ -38,6 +46,7 @@ func run() -> void:
 	await create_timer(0.5).timeout
 	check(gm.play_mode == 1 and not current_scene.has_node("ModeMenu"), "restart preserves chosen mode")
 	gm.select_mode(0)
+	gm.tutorial_active = false
 	gm.advance_expedition(301)
 	check(gm.expedition_finished, "educational mode retains deadline")
 	print("MODE FAILURES: ", failures)

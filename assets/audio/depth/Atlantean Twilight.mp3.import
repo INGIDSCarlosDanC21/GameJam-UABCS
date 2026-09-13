@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://bfiik1ga5p03l"
+path="res://.godot/imported/Atlantean Twilight.mp3-24414d48a5bb8a4a94b219d4875905a8.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/depth/Atlantean Twilight.mp3"
+dest_files=["res://.godot/imported/Atlantean Twilight.mp3-24414d48a5bb8a4a94b219d4875905a8.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

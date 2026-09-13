@@ -5,6 +5,7 @@ var _water_materials: Array[ShaderMaterial] = []
 
 func _ready() -> void:
 	await get_tree().process_frame
+	if not is_inside_tree(): return
 	var main := get_parent()
 	var env: Environment = main.get_node("WorldEnvironment").environment
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
@@ -38,7 +39,7 @@ func _ready() -> void:
 	window_light.spot_attenuation = 1.5
 	window_light.shadow_enabled = false
 	main.add_child(window_light)
-	window_light.look_at(Vector3(0, 0.9, 1.5))
+	window_light.rotation = Basis.looking_at(Vector3(0, 0.9, 1.5) - window_light.position, Vector3.UP).get_euler()
 
 func _process(_delta: float) -> void:
 	var strength := pow(GameManager.ocean_health / 100.0, 2.0) * exp(-float(GameManager.depth) * 0.4)
@@ -60,10 +61,15 @@ func _style(node: Node) -> void:
 				glass.metallic = 0.0
 				glass.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 				node.set_surface_override_material(i, glass)
+				var curved_glass := ShaderMaterial.new()
+				curved_glass.shader = preload("res://shaders/cabin_glass.gdshader")
+				if OS.has_feature("android"): curved_glass.shader = preload("res://shaders/quest_glass.gdshader")
+				node.set_surface_override_material(i, curved_glass)
 				continue
 			if source is StandardMaterial3D and source.transparency == BaseMaterial3D.TRANSPARENCY_DISABLED and source.shading_mode != BaseMaterial3D.SHADING_MODE_UNSHADED:
 				var mat := ShaderMaterial.new()
 				mat.shader = preload("res://shaders/submarine_gray.gdshader")
+				if OS.has_feature("android"): mat.shader = preload("res://shaders/quest_submarine.gdshader")
 				_water_materials.append(mat)
 				mat.set_shader_parameter("base_color", source.albedo_color)
 				if source.albedo_texture: mat.set_shader_parameter("paint", source.albedo_texture)

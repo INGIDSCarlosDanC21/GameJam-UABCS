@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://dwh31jpcq4o5w"
+path="res://.godot/imported/Continue Life.mp3-c67f7c9069118b6ed4fdef22f9e785b5.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/depth/Continue Life.mp3"
+dest_files=["res://.godot/imported/Continue Life.mp3-c67f7c9069118b6ed4fdef22f9e785b5.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

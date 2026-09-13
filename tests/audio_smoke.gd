@@ -8,7 +8,7 @@ func check(value: bool, label: String) -> void:
 func _initialize() -> void:
 	call_deferred("run")
 func run() -> void:
-	root.get_node("GameManager").select_mode(0)
+	root.get_node("GameManager").select_mode(1)
 	var main = load("res://scenes/Main.tscn").instantiate()
 	root.add_child(main)
 	current_scene = main
@@ -19,6 +19,16 @@ func run() -> void:
 	main.get_node("OceanSession").set_process(false)
 	var hub = main.get_node("SoundHub")
 	var director = hub.get_node("AudioDirector")
+	check(hub.explosion.resource_path.ends_with("deltarune-explosion.mp3"), "original Deltarune explosion restored")
+	check(hub.alarm.resource_path.ends_with("FNAF 3 ventilation error.mp3"), "original ventilation alarm restored")
+	check(director.music_volume_db == -7 and hub.effects_volume_db == -6, "classroom mix raises music and effects")
+	var previous_pitch: float = hub._varied_pitch("fish")
+	var varied := true
+	for index in 20:
+		var next_pitch: float = hub._varied_pitch("fish")
+		varied = varied and absf(next_pitch - previous_pitch) > 0.01 and next_pitch > 0.90 and next_pitch < 1.10
+		previous_pitch = next_pitch
+	check(varied and hub._varied_pitch("alarm") == 1.0, "repeated effects vary within bounds while alarm stays recognizable")
 	check(director._normal.playing and director._normal.stream.loop, "expedition music starts and loops")
 	check(not main.get_node("AmbientAudio").playing, "legacy music does not overlap")
 	for event in hub._sounds:
@@ -42,10 +52,10 @@ func run() -> void:
 	gm.fever_left = 10
 	director._process(0.1)
 	check(director._blend > 0 and director._blend < 1, "fever crossfade is gradual")
-	director._process(1.0)
+	director._process(2.0)
 	check(director._fever.playing and not director._normal.playing, "fever replaces normal music")
 	gm.fever_left = 0
-	director._process(1.0)
+	director._process(2.0)
 	check(director._normal.playing and not director._fever.playing, "normal music returns after fever")
 	gm.stun_left = 5
 	director._process(1.0)
@@ -77,6 +87,7 @@ func run() -> void:
 	print("Recorded peak dBFS: ", linear_to_db(maxf(peak, 0.00001)))
 	recording.save_to_wav("res://.godot/arcade-audio-preview.wav")
 	AudioServer.remove_bus_effect(0, AudioServer.get_bus_effect_count(0) - 1)
+	gm._damage_cooldown = 0
 	gm._set_health(0)
 	hub._process(0.1)
 	director._process(2.0)

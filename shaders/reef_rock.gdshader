@@ -1,10 +1,10 @@
 shader_type spatial;
+render_mode cull_disabled;
 #include "res://shaders/water_motion.gdshaderinc"
 uniform float depth_level = 0.0;
 uniform float ecosystem_light = 1.0;
 varying vec3 world;
 void vertex() {
- VERTEX *= 1.0 + sin(VERTEX.x * 17.0 + VERTEX.y * 13.0) * 0.12;
  world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
  VERTEX += (inverse(MODEL_MATRIX) * vec4(underwater_warp(world, TIME), 0.0)).xyz;
 }

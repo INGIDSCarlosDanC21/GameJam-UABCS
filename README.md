@@ -1,4 +1,15 @@
+# Ocean VR · Demo 1.0
+
+**[Página de descarga](https://ingidscarlosdanc21.github.io/GameJam-UABCS/)** · **[Archivos de la demo](https://github.com/INGIDSCarlosDanC21/GameJam-UABCS/releases/tag/demo-v1.0.0)**
+
+Demo para presentación y evaluación del cliente: Windows, PCVR y Meta Quest 2. Instrucciones y controles en la página de descarga. Los créditos de terceros no conceden permiso de reutilización comercial.
+
+> Estado actual: **1.0.0-demo**, candidata de cierre. Consulta [validación y pendientes](docs/RELEASE_1_0.md), [Quest 2](docs/QUEST2.md) y [créditos completos](assets/CREDITS.txt). Las instrucciones históricas de arte que siguen no describen todas las mecánicas actuales.
+
 # Ocean VR — guía de arte 2D (Godot 4.x)
+
+**Fondo 3D actualizado:** [guía del arrecife, animaciones y ajustes para Quest](FONDO_MARINO_3D.md).
+[Créditos de los modelos descargados](assets/models/reef/CREDITS.txt), también disponibles al elegir modo de juego.
 
 **Fecha del prototipo: 10 de septiembre de 2026.**  
 Prototipo: cabina estática, puntero láser VR, peces/basura flotantes y **Salud del Océano**.  

@@ -5,7 +5,7 @@ extends XRController3D
 @export var max_speed: float = 7.0
 @export var desktop_enabled := true
 @export var pointer_color := Color("7bffdf")
-@export_range(0.0, 1.0) var haptic_strength := 0.5
+@export_range(0.0, 1.0) var haptic_strength := 1.0
 var _hovering: Node3D
 @onready var _ray: RayCast3D = $RayCast3D
 @onready var _camera: Camera3D = get_parent().get_node("XRCamera3D")
@@ -30,13 +30,30 @@ var _capture_ring: MultiMesh
 var _cursor_material: StandardMaterial3D
 var _activation_flash := 0.0
 var _activation_color := Color.WHITE
+var _haptic_until := 0
+var _haptic_amplitude := 0.0
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	add_to_group("xr_pointers")
-	GameManager.depth_changed.connect(func(_depth: int): pulse(0.6, 0.3))
+	var flashlight := SpotLight3D.new()
+	flashlight.set_script(preload("res://scripts/CursorFlashlight.gd"))
+	add_child(flashlight)
+	GameManager.depth_changed.connect(func(_depth: int): pulse(1.0, 0.45))
+	GameManager.level_changed.connect(func(_level: int): pulse(0.9, 0.22))
 	button_pressed.connect(_pressed)
 	button_released.connect(_released)
-	$LaserBeam.hide()
+	var laser_beam := get_node_or_null("LaserBeam") as MeshInstance3D
+	if laser_beam:
+		laser_beam.hide()
+		var source_material: Material = laser_beam.material_override
+		if source_material == null and laser_beam.mesh != null and laser_beam.mesh.get_surface_count() > 0:
+			source_material = laser_beam.get_active_material(0)
+		var laser_material := source_material.duplicate() as StandardMaterial3D if source_material else StandardMaterial3D.new()
+		laser_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		laser_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		laser_material.albedo_color = pointer_color
+		laser_beam.material_override = laser_material
 	_ray.top_level = true
 	_ray.collision_mask = 2
 	_ray.collide_with_areas = true
@@ -45,6 +62,7 @@ func _ready() -> void:
 	add_child(_claw)
 	_claw.top_level = true
 	_grip_bar = MeshInstance3D.new()
+	_grip_bar.layers = 2
 	var bar := BoxMesh.new()
 	bar.size = Vector3(0.22, 0.018, 0.008)
 	_grip_bar.mesh = bar
@@ -64,6 +82,7 @@ func _ready() -> void:
 	_part(_claw, ring, Vector3.ZERO, mat)
 	_claw.get_child(_claw.get_child_count() - 1).rotation.x = PI / 2
 	var ticks := MultiMeshInstance3D.new()
+	ticks.layers = 2
 	var shape := BoxMesh.new()
 	shape.size = Vector3(0.008, 0.016, 0.003)
 	_capture_ring = MultiMesh.new()
@@ -79,6 +98,7 @@ func _ready() -> void:
 		var angle := float(index) / 24.0 * TAU
 		_capture_ring.set_instance_transform(index, Transform3D(Basis(Vector3.BACK, -angle), Vector3(sin(angle), cos(angle), 0) * 0.075))
 	_info = Label3D.new()
+	_info.layers = 2
 	_info.font_size = 24
 	_info.pixel_size = 0.0013
 	_info.outline_size = 6
@@ -91,6 +111,7 @@ func _ready() -> void:
 
 func _part(parent: Node3D, mesh: Mesh, at: Vector3, mat: Material) -> void:
 	var part := MeshInstance3D.new()
+	part.layers = 2
 	part.mesh = mesh
 	part.material_override = mat
 	part.position = at
@@ -114,14 +135,28 @@ func _process(delta: float) -> void:
 	if capturing: size += sin(_elapsed * 12.0) * 0.05
 	size += _activation_flash * 0.8
 	_claw.scale = Vector3.ONE * size
+	var journal := get_tree().get_first_node_in_group("journal_panels") as Node3D
+	var menu_open := journal != null and journal.is_visible_in_tree()
+	for part in _claw.get_children():
+		if part is GeometryInstance3D and part.material_override is StandardMaterial3D:
+			part.material_override.no_depth_test = menu_open
+			part.material_override.render_priority = 30 if menu_open else 0
 
 func _unhandled_input(event: InputEvent) -> void:
 	if desktop_enabled and not get_viewport().use_xr and event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		var photo := get_tree().get_first_node_in_group("research_camera")
+		if event.pressed and photo and photo.handle_press(self):
+			_held = false
+			return
 		_held = event.pressed
 		_idle = 0
 		if not _held: _release_snail()
 
 func _pressed(button: String) -> void:
+	var photo := get_tree().get_first_node_in_group("research_camera")
+	if photo and photo.holder == self:
+		if button == "grip_click": photo.release(); return
+		if button == "trigger_click" and photo.handle_press(self): return
 	if button == "trigger_click":
 		_held = true
 
@@ -137,7 +172,7 @@ func _physics_process(delta: float) -> void:
 	_elapsed += delta
 	_idle += delta
 	_info.modulate.a = move_toward(_info.modulate.a, 1.0 if _elapsed < 60 or _idle >= 5 or is_instance_valid(_target) else 0.0, delta)
-	if GameManager.stun_left > 0:
+	if GameManager.stun_left > 0 and not get_tree().paused:
 		_held = false
 		_progress = 0
 		_info.text = "BLOQUEADO %.1f s" % GameManager.stun_left
@@ -155,12 +190,15 @@ func _physics_process(delta: float) -> void:
 		return
 	_claw.show()
 	_info.show()
+	var journal := get_tree().get_first_node_in_group("journal_panels") as Node3D
+	if journal and journal.is_visible_in_tree(): _info.hide()
 	var origin := global_position if vr else _camera.project_ray_origin(get_viewport().get_mouse_position())
 	var desired := -global_basis.z if vr else _camera.project_ray_normal(get_viewport().get_mouse_position())
 	_aim = desired.normalized()
 	if _aim.distance_to(_last_aim) > 0.015 or _held: _idle = 0
 	_last_aim = _aim
 	_ray.global_position = origin
+	_ray.collision_mask = 4 if journal and journal.is_visible_in_tree() else 2
 	_ray.global_basis = Basis.IDENTITY
 	_ray.target_position = _aim * 8.0
 	_ray.force_raycast_update()
@@ -183,8 +221,17 @@ func _physics_process(delta: float) -> void:
 		if is_instance_valid(_target) and _target.has_method("set_hovered"):
 			_set_hover(_target, true)
 		if is_instance_valid(_target): pulse(0.12, 0.025)
+	if get_tree().paused and (not is_instance_valid(_target) or not _target.is_in_group("pause_controls")):
+		_clear_target()
+		_pressed_target = null
+		_info.text = "PAUSA"
+		return
 	if not is_instance_valid(_target) or not _target.is_in_group("interactable"):
-		_info.text = "Apunta y mantén una pinza para capturar" if _uses_hands() else "Apunta y mantén gatillo / clic para capturar"
+		_info.text = "Pinza" if _uses_hands() else "Mantén"
+		return
+	if _target.has_method("drag_at"):
+		if _held: _target.drag_at(point)
+		_progress = 0
 		return
 	if _held and _pressed_target != _target:
 		_pressed_target = _target
@@ -193,15 +240,17 @@ func _physics_process(delta: float) -> void:
 	if _target.has_method("get_stats_text"):
 		_info.text = _target.get_stats_text()
 	else:
-		_info.text = "Mantén para elegir modo" if not GameManager.mode_selected else ("Mantén para reiniciar" if GameManager.is_run_over() else "Mantén para activar")
+		_info.text = "Mantén"
 	if not _held or not aligned or _cooldown > 0:
 		_progress = 0.0
 		return
 	var required: float = _target.capture_time if _target.has_method("get_stats_text") else 0.18
+	if _target.is_in_group("fish"):
+		required = GameManager.capture_duration(required, true)
 	if GameManager.fever_left > 0: required = 0.06
 	_progress += delta
 	_grip_ratio = clampf(_progress / required, 0, 1)
-	_info.text += "\nCapturando: %d%%" % mini(100, int(100.0 * _progress / required))
+	_info.text += "  %d%%" % mini(100, int(100.0 * _progress / required))
 	if _progress >= required:
 		GameManager.bubbles_requested.emit(point)
 		activate_target(_target)
@@ -221,7 +270,9 @@ func _release_snail() -> void:
 	held_snail = null
 
 func activate_target(target: Node3D) -> void:
+	if get_tree().paused and (not is_instance_valid(target) or not target.is_in_group("pause_controls")): return
 	if not is_instance_valid(target) or target.is_queued_for_deletion(): return
+	if Time.get_ticks_msec() < int(target.get_meta("direct_touch_until",0)): return
 	if target.has_method("on_pointer_click"):
 		target.on_pointer_click(self)
 	else:
@@ -244,6 +295,11 @@ func _set_hover(target: Node3D, active: bool) -> void:
 
 func pulse(amplitude: float, seconds: float) -> void:
 	if not get_viewport().use_xr or not get_is_active() or haptic_strength <= 0 or _uses_hands(): return
+	var now := Time.get_ticks_msec()
+	# Hover feedback must not cancel a stronger level/descent pulse.
+	if now < _haptic_until and amplitude < _haptic_amplitude: return
+	_haptic_until = now + int(seconds * 1000)
+	_haptic_amplitude = amplitude
 	trigger_haptic_pulse("haptic", 0.0, clampf(amplitude * haptic_strength, 0, 1), seconds, 0.0)
 
 func _uses_hands() -> bool:
