@@ -46,7 +46,9 @@ func _ready() -> void:
 	var laser_beam := get_node_or_null("LaserBeam") as MeshInstance3D
 	if laser_beam:
 		laser_beam.hide()
-		var source_material := laser_beam.get_active_material(0)
+		var source_material: Material = laser_beam.material_override
+		if source_material == null and laser_beam.mesh != null and laser_beam.mesh.get_surface_count() > 0:
+			source_material = laser_beam.get_active_material(0)
 		var laser_material := source_material.duplicate() as StandardMaterial3D if source_material else StandardMaterial3D.new()
 		laser_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		laser_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -60,6 +62,7 @@ func _ready() -> void:
 	add_child(_claw)
 	_claw.top_level = true
 	_grip_bar = MeshInstance3D.new()
+	_grip_bar.layers = 2
 	var bar := BoxMesh.new()
 	bar.size = Vector3(0.22, 0.018, 0.008)
 	_grip_bar.mesh = bar
@@ -79,6 +82,7 @@ func _ready() -> void:
 	_part(_claw, ring, Vector3.ZERO, mat)
 	_claw.get_child(_claw.get_child_count() - 1).rotation.x = PI / 2
 	var ticks := MultiMeshInstance3D.new()
+	ticks.layers = 2
 	var shape := BoxMesh.new()
 	shape.size = Vector3(0.008, 0.016, 0.003)
 	_capture_ring = MultiMesh.new()
@@ -94,6 +98,7 @@ func _ready() -> void:
 		var angle := float(index) / 24.0 * TAU
 		_capture_ring.set_instance_transform(index, Transform3D(Basis(Vector3.BACK, -angle), Vector3(sin(angle), cos(angle), 0) * 0.075))
 	_info = Label3D.new()
+	_info.layers = 2
 	_info.font_size = 24
 	_info.pixel_size = 0.0013
 	_info.outline_size = 6
@@ -106,6 +111,7 @@ func _ready() -> void:
 
 func _part(parent: Node3D, mesh: Mesh, at: Vector3, mat: Material) -> void:
 	var part := MeshInstance3D.new()
+	part.layers = 2
 	part.mesh = mesh
 	part.material_override = mat
 	part.position = at
@@ -129,14 +135,28 @@ func _process(delta: float) -> void:
 	if capturing: size += sin(_elapsed * 12.0) * 0.05
 	size += _activation_flash * 0.8
 	_claw.scale = Vector3.ONE * size
+	var journal := get_tree().get_first_node_in_group("journal_panels") as Node3D
+	var menu_open := journal != null and journal.is_visible_in_tree()
+	for part in _claw.get_children():
+		if part is GeometryInstance3D and part.material_override is StandardMaterial3D:
+			part.material_override.no_depth_test = menu_open
+			part.material_override.render_priority = 30 if menu_open else 0
 
 func _unhandled_input(event: InputEvent) -> void:
 	if desktop_enabled and not get_viewport().use_xr and event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		var photo := get_tree().get_first_node_in_group("research_camera")
+		if event.pressed and photo and photo.handle_press(self):
+			_held = false
+			return
 		_held = event.pressed
 		_idle = 0
 		if not _held: _release_snail()
 
 func _pressed(button: String) -> void:
+	var photo := get_tree().get_first_node_in_group("research_camera")
+	if photo and photo.holder == self:
+		if button == "grip_click": photo.release(); return
+		if button == "trigger_click" and photo.handle_press(self): return
 	if button == "trigger_click":
 		_held = true
 
@@ -170,12 +190,15 @@ func _physics_process(delta: float) -> void:
 		return
 	_claw.show()
 	_info.show()
+	var journal := get_tree().get_first_node_in_group("journal_panels") as Node3D
+	if journal and journal.is_visible_in_tree(): _info.hide()
 	var origin := global_position if vr else _camera.project_ray_origin(get_viewport().get_mouse_position())
 	var desired := -global_basis.z if vr else _camera.project_ray_normal(get_viewport().get_mouse_position())
 	_aim = desired.normalized()
 	if _aim.distance_to(_last_aim) > 0.015 or _held: _idle = 0
 	_last_aim = _aim
 	_ray.global_position = origin
+	_ray.collision_mask = 4 if journal and journal.is_visible_in_tree() else 2
 	_ray.global_basis = Basis.IDENTITY
 	_ray.target_position = _aim * 8.0
 	_ray.force_raycast_update()
@@ -205,6 +228,10 @@ func _physics_process(delta: float) -> void:
 		return
 	if not is_instance_valid(_target) or not _target.is_in_group("interactable"):
 		_info.text = "Pinza" if _uses_hands() else "Mantén"
+		return
+	if _target.has_method("drag_at"):
+		if _held: _target.drag_at(point)
+		_progress = 0
 		return
 	if _held and _pressed_target != _target:
 		_pressed_target = _target

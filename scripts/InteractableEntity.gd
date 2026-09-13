@@ -1,9 +1,10 @@
 extends Area3D
 enum Kind { FISH, TRASH, SEAL }
-const FISH_ART := ["pez azul", "pez naranja", "anginla", "pez dorado millonario", "pulpo"]
+const FISH_ART := ["pez azul", "pez naranja", "pez payaso", "anginla", "pez dorado millonario", "pulpo"]
 const TRASH_ART := ["botella rota inferiror", "botella rota superior", "botella", "lata", "monton de basura", "soporte de cerveza"]
 const INK = preload("res://shaders/sprite_ink.gdshader")
 static var art_cache: Dictionary = {}
+static var texture_cache: Dictionary = {}
 @export var kind: Kind = Kind.FISH
 @export var speed := 0.25
 @export var lifetime := 22.0
@@ -45,7 +46,7 @@ var _swim_blend := 1.0
 func _setup_color_pattern() -> void:
 	# Special species keep their visual identity; color never changes reward/rarity.
 	_material.set_shader_parameter("pattern_strength", 0.0)
-	if kind != Kind.FISH or species not in ["pez azul", "pez naranja"]: return
+	if kind != Kind.FISH: return
 	var palette := [Color("3b9acf"), Color("60c9b0"), Color("9b8ad5"), Color("dd7795"), Color("e98764"), Color("77a9d9")]
 	var index := randi_range(0, palette.size() - 1)
 	_material.set_shader_parameter("body_color", palette[index])
@@ -70,10 +71,14 @@ func _ready() -> void:
 			var r := randf()
 			var bait_bias := minf(0.22, GameManager.bait_level * 0.022)
 			species = "pez oracles" if GameManager.depth > 0 and r < 0.03 else ("pez azul" if r < 0.40 - bait_bias else ("pez naranja" if r < 0.72 - bait_bias * 0.45 else ("pulpo" if r < 0.82 else ("anginla" if r < 0.995 - bait_bias else "pez dorado millonario"))))
-			if GameManager.depth > 0 and randf() < 0.15: species = "pez linterna"
+			if GameManager.depth >= 12 and randf() < 0.25: species = "pez linterna"
+			if species == "pez oracles" and GameManager.depth < 5: species = "pez azul"
+			if species == "anginla" and GameManager.depth < 3: species = "pez naranja"
+			if species == "pez naranja" and randf() < .4: species = "pez payaso"
+		if species == "pez linterna" and GameManager.depth < 12: species = "pez azul"
 		rarity = 3 if "dorado" in species else (1 if "anginla" in species or "linterna" in species else 0)
 		size_factor = [0.9, 1.1, 1.4].pick_random() * minf(1.55, 1.0 + GameManager.depth * 0.10)
-		aura = randi_range(1, 3) if randf() < minf(0.75, 0.18 + GameManager.depth * 0.08 + GameManager.bait_level * 0.045) else 0
+		aura = 0
 		speed = (0.32 if "anginla" in species else 0.23) * GameManager.difficulty()
 	elif kind == Kind.TRASH:
 		add_to_group("trash")
@@ -137,7 +142,8 @@ func _texture_path(name_text: String) -> String:
 	return path if ResourceLoader.exists(path) else "res://assets/art/pez azul.png"
 
 func _apply_art(path: String, replacement: Texture2D = null) -> void:
-	var texture: Texture2D = replacement if replacement else load(path) as Texture2D
+	if not replacement and not texture_cache.has(path): texture_cache[path] = load(path)
+	var texture: Texture2D = replacement if replacement else texture_cache[path]
 	if not texture: return
 	var key := texture.get_instance_id()
 	if not art_cache.has(key): art_cache[key] = texture.get_image().get_used_rect()
@@ -148,14 +154,20 @@ func _apply_art(path: String, replacement: Texture2D = null) -> void:
 	_sprite.region_rect = Rect2(bounds.grow(padding).intersection(Rect2i(Vector2i.ZERO, Vector2i(texture.get_size()))))
 	var width := (0.4 if "anginla" in species else (0.34 if "pulpo" in species else 0.25)) * size_factor
 	_sprite.pixel_size = width / maxi(1, bounds.size.x)
+	# Both drawings use the same canvas/head scale; the impulse spreads its arms.
+	if species == "pulpo" and path.contains("pulpo nadando"):
+		_sprite.pixel_size = width / 603.0
 	_sprite.flip_h = false
 	_material.set_shader_parameter("art_rect", Vector4(float(bounds.position.x) / texture.get_width(), float(bounds.position.y) / texture.get_height(), float(bounds.size.x) / texture.get_width(), float(bounds.size.y) / texture.get_height()))
 	_material.set_shader_parameter("art", texture)
 	_material.set_shader_parameter("texel", Vector2.ONE / texture.get_size())
 	_material.set_shader_parameter("glow_color", Color(1, 0.7, 0.15, 0.2) if rarity == 3 else Color(0, 0, 0, 0))
-	var box := BoxShape3D.new()
+	# Animated art must not rebuild a physics shape on every frame change.
+	if species == "pulpo" and $CollisionShape3D.shape is BoxShape3D: return
+	if not $CollisionShape3D.shape is BoxShape3D:
+		$CollisionShape3D.shape = BoxShape3D.new()
+	var box := $CollisionShape3D.shape as BoxShape3D
 	box.size = Vector3(width + 0.08, bounds.size.y * _sprite.pixel_size + 0.08, 0.14)
-	$CollisionShape3D.shape = box
 
 func _physics_process(delta: float) -> void:
 	if GameManager.is_run_over(): return
@@ -209,6 +221,11 @@ func _physics_process(delta: float) -> void:
 		position.z = lerpf(_entry_start_z, _base_z, smoothstep(0.0, 1.0, minf(_age / ENTRY_DURATION, 1.0)))
 		if position.y < -0.5: _expire()
 		return
+	if kind == Kind.TRASH:
+		position.y = maxf(.5,position.y-delta*.22)
+		position.x += direction*speed*delta*movement_blend
+		if _age > lifetime: _expire()
+		return
 	position.x += direction * speed * (8.0 if fever else 1.0) * delta * movement_blend
 	if "pulpo" in species:
 		var hop := fmod(_age + _phase * 0.12, 1.35)
@@ -244,10 +261,14 @@ func _physics_process(delta: float) -> void:
 func _animate_swimming(delta: float) -> void:
 	if kind == Kind.TRASH: return
 	var swimming := kind == Kind.FISH and not unsuitable
-	_material.set_shader_parameter("swim_time", _age * (9.0 if angry else 5.5) + _phase)
+	var frequency := 3.2 if "linterna" in species else (8.0 if "anginla" in species else (6.5 if species == "pez naranja" else 4.5))
+	_material.set_shader_parameter("swim_time", _age * (9.0 if angry else frequency) + _phase)
 	_material.set_shader_parameter("bend_strength", body_bend * (1.65 if "anginla" in species else 1.0) if swimming and "pulpo" not in species else 0.0)
 	var tilt := sin(_age * 2.8 + _phase) * 0.12 if not unsuitable else -0.25 * direction
-	_sprite.rotation.z = lerp_angle(_sprite.rotation.z, tilt, 1.0 - exp(-delta * 5.0))
+	if unsuitable: tilt = PI
+	elif species == "pez naranja": tilt += sin(_age * 4.0 + _phase) * 0.10
+	elif "linterna" in species: tilt *= 0.35
+	_sprite.rotation.z = lerp_angle(_sprite.rotation.z, tilt, 1.0 - exp(-delta * (2.0 if unsuitable else 5.0)))
 	_sprite.rotation.y = lerp_angle(_sprite.rotation.y, 0.0 if direction > 0 else PI, 1.0 - exp(-delta * 5.0))
 	if not swimming or _exit_age >= 0 or GameManager.fever_left > 0: return
 	_turn_wait -= delta
@@ -257,6 +278,11 @@ func _animate_swimming(delta: float) -> void:
 
 func on_target_pressed() -> void:
 	if "anginla" in species and not unsuitable and not GameManager.is_run_over():
+		if not angry:
+			var shock := Node3D.new()
+			shock.set_script(preload("res://scripts/RobotShock.gd"))
+			add_child(shock)
+			GameManager.sound_requested.emit("electric")
 		angry = true
 		if _local_light: _local_light.show()
 		_apply_art(_texture_path("anginla enojada"))
@@ -267,6 +293,8 @@ func on_click() -> void:
 		on_target_pressed()
 		return
 	_clicked = true
+	if species in ["pez azul", "pez naranja", "pez payaso", "pez linterna", "pez dorado millonario"]:
+		GameManager.sound_requested.emit(species)
 	if "pulpo" in species:
 		_apply_art(_texture_path("pulpo asustado (click)"))
 		var ink := Sprite3D.new()
@@ -286,6 +314,8 @@ func on_click() -> void:
 func make_unsuitable() -> void:
 	if unsuitable or _clicked or kind != Kind.FISH: return
 	unsuitable = true
+	GameManager.sound_at_requested.emit("fish_hurt", global_position)
+	GameManager.bubbles_requested.emit(global_position)
 	# Keep this individual's palette and pattern when replacing its death pose.
 	if is_instance_valid(_oracle_badge): _oracle_badge.hide()
 	_exit_age = -1
@@ -298,6 +328,7 @@ func make_unsuitable() -> void:
 	if species == "anginla": noapto_texture = load("res://assets/art/anginla noapta.png")
 	if species == "pez dorado millonario": noapto_texture = load("res://assets/art/pez dorado noapto.png")
 	if species == "pez oracles": noapto_texture = load("res://assets/art/oracles noapto.png")
+	if species == "pez payaso": noapto_texture = preload("res://assets/art/pes payaso muerto.png")
 	if noapto_texture:
 		_apply_art("", noapto_texture)
 		found = true

@@ -1,10 +1,13 @@
 extends "res://scripts/ShopItem.gd"
 func _ready() -> void:
 	item = Item.FILTER
-	button_texture = preload("res://assets/ui/flashlight.svg")
+	button_texture = preload("res://assets/art/linterna.png")
 	super._ready()
 	_art.texture = button_texture
-	_art.pixel_size = 0.115 / 128.0
+	var bounds := button_texture.get_image().get_used_rect()
+	_art.region_enabled = true
+	_art.region_rect = Rect2(bounds)
+	_art.pixel_size = 0.115 / maxi(1,maxi(bounds.size.x,bounds.size.y))
 	name = "ShopFlashlight"
 	position = Vector3(0.58, 0.73, -0.26)
 	basis = Basis.looking_at(position - Vector3(0, 1.45, 0), Vector3.UP)

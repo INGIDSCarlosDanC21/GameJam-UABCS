@@ -19,5 +19,15 @@ func run() -> void:
 	button._last_press = -1000
 	pointer.activate_target(button)
 	assert(not paused)
+	button._last_press = -1000
+	button.on_click()
+	var restart_button = main.get_node("Cabin/PauseRestart")
+	restart_button._process(0.0)
+	assert(restart_button.visible and restart_button.collision_layer == 2)
+	restart_button.on_click()
+	await process_frame
+	await process_frame
+	assert(not paused and not gm.mode_selected)
+	assert(current_scene.has_node("ModeMenu"))
 	print("PASS: pause blocks purchases, keeps resume responsive and clears filter button")
 	quit()

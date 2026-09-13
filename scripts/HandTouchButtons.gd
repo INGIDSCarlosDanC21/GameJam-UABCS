@@ -106,6 +106,14 @@ func _make_hand(color: Color) -> Node3D:
 		hand.add_child(finger)
 	return hand
 func feed_tip(side: String, tip: Vector3) -> void:
+	var journal := get_tree().get_first_node_in_group("journal_panels") as Node3D
+	if journal and journal.is_visible_in_tree():
+		for slider in get_tree().get_nodes_in_group("interactable"):
+			if slider.has_method("drag_at") and slider.is_visible_in_tree():
+				var local: Vector3 = slider.to_local(tip)
+				if absf(local.x)<.27 and absf(local.y)<.04 and absf(local.z)<.04:
+					slider.drag_at(tip)
+					return
 	var near: Node3D
 	for button in get_tree().get_nodes_in_group("touch_buttons"):
 		if get_tree().paused and not button.is_in_group("pause_controls"): continue

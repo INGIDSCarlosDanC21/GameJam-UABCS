@@ -1,0 +1,12 @@
+# Ajustes de fauna, robots y cuaderno
+
+- Los dos orígenes de peces linterna 3D (colonia luminosa y Fish1.fbx) están bloqueados hasta profundidad 12. Fish1 era un pez linterna mal identificado como pez azul. La cámara identifica también Fish3 como pez payaso.
+- Flota máxima: 30. Los robots patrullan al 38% de opacidad; búsqueda/recogida y procesamiento son opacos. Absorben una representación del residuo y se balancean durante 5 / 3,5 / 2 segundos según calidad. El residuo se contabiliza una sola vez al recogerlo; el robot no puede aceptar trabajo durante el procesamiento. La parálisis suspende ese tiempo. Como máximo cuatro robots trabajan simultáneamente para despejar el visor.
+- Los encuentros especiales cruzan el centro durante 23 segundos y regresan fuera de vista. La posición incluye la profundidad real del modelo para dejar su superficie delante del casco. El sonido espacial descargado y los pulsos de control aumentan con la proximidad. No se desplaza la cámara VR para simular vibración.
+- La fotografía más reciente de cada especie se guarda y se muestra en el cuaderno. Educación y práctica tienen un álbum por expedición independiente del registro permanente. Las fotos anteriores al cambio que no tenían una asociación de especie permanecen en la carpeta de fotos, pero no pueden asociarse automáticamente.
+- Almanaque con selector de especies, selector de fotos y alternancia entre foto propia y referente real. Ajustes con listas de valores; no se ofrecen DLSS ni ray tracing. VR conserva el control de FPS y sincronización del visor. La profundidad de práctica se selecciona con una barra de 0 a 30 km.
+- Se descargaron diez modelos de Poly Pizza, con 202–3720 triángulos cada uno. El almanaque usa modelos importados; para las especies fantásticas se reutilizan referentes de animales reales. Oracles no tiene modelo apropiado: muestra un aviso de recurso pendiente. Los pulpos gigantes comparten el pulpo descargado y su movimiento; este recurso no incluye esqueleto animado.
+
+Licencias y fuentes: `assets/models/marine/CREDITS.txt` y `assets/audio/effects/ENCOUNTER_CREDITS.txt`. El sonido de encuentro es un efecto de criatura ficticia, no una grabación científica. Incluidos en los filtros de exportación.
+
+Validación: `marine_qol_smoke`, `cleaner_assignment_smoke`, `pause_smoke`, `extras_smoke`, `research_smoke` y `performance_art_smoke`. Prueba gráfica a profundidad 20 en RTX 4050: mediana 14,3 ms, p95 21,8 ms (180 cuadros, después del calentamiento). No sustituye una comprobación física de Quest/PCVR y vibración.

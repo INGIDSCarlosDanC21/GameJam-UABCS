@@ -52,11 +52,8 @@ void fragment() {
     vec2 uv = bent_uv(UV);
     vec4 c = texture(art, uv);
     float edge = 0.0;
-    for (int x = -1; x <= 1; x++) {
-        for (int y = -1; y <= 1; y++) {
-            edge = max(edge, texture(art, uv + vec2(float(x), float(y)) * texel * 3.0).a);
-        }
-    }
+    edge = max(texture(art, uv + vec2(texel.x*3.0,0.0)).a, texture(art, uv - vec2(texel.x*3.0,0.0)).a);
+    edge = max(edge,max(texture(art, uv + vec2(0.0,texel.y*3.0)).a,texture(art, uv - vec2(0.0,texel.y*3.0)).a));
     ALBEDO = mix(vec3(0.006), patterned_color(c.rgb, uv) * tint, smoothstep(0.05, 0.8, c.a));
     EMISSION = glow_color.rgb * glow_color.a * c.rgb * c.a;
     ALPHA = max(c.a, edge) * fade;

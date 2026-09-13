@@ -39,6 +39,8 @@ func _exit_tree() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not _enabled or _focus_paused:
 		return
+	var journal := get_tree().get_first_node_in_group("journal_panels") as Node3D
+	if journal and journal.is_visible_in_tree(): return
 	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED else Input.MOUSE_MODE_CAPTURED)
 		get_viewport().set_input_as_handled()

@@ -21,14 +21,14 @@ func _ready() -> void:
 	region_enabled = true
 	region_rect = Rect2(bounds)
 	# Normalize by the cropped image diagonal; rotation cannot enlarge the patch.
-	pixel_size = 0.30 / maxf(1.0, Vector2(bounds.size).length())
+	pixel_size = 0.55 / maxf(1.0, Vector2(bounds.size).length())
 	scale = Vector3.ONE * 0.7
 
 
 func _process(delta: float) -> void:
 	age += delta
 	var fade := clampf((lifetime - age) / 0.45, 0.0, 1.0)
-	modulate.a = fade
+	modulate.a = fade * smoothstep(0,.25,age)
 	scale = Vector3.ONE * lerpf(0.7, 1.0, minf(age / 0.18, 1.0))
 	if age >= lifetime:
 		queue_free()

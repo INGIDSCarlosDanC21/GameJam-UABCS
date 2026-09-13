@@ -104,7 +104,8 @@ func _height(x: float, z: float) -> float:
 	var distance := Vector2(x, z).length()
 	var dunes := smoothstep(7.0, 15.0, distance) * (1.4 + sin(x * 0.19 + z * 0.13) * 0.85 + cos(z * 0.25 - x * 0.08) * 0.55)
 	var boundary := 1.0 - smoothstep(27.0, 34.0, maxf(absf(x), absf(z)))
-	return lerpf(-2.4, -1.7 + sin(x * 0.24) * 0.25 + cos(z * 0.32) * 0.2 + dunes, boundary)
+	var central_dune := 3.0 * exp(-(x * x / 36.0 + (z + 25.0) * (z + 25.0) / 42.0))
+	return lerpf(-2.4, -1.7 + sin(x * 0.24) * 0.25 + cos(z * 0.32) * 0.2 + dunes + central_dune, boundary)
 
 func _build_caves(material: Material) -> void:
 	# Thick open tunnels; their hollow silhouette remains visible from the cabin.

@@ -5,6 +5,7 @@ var _water_materials: Array[ShaderMaterial] = []
 
 func _ready() -> void:
 	await get_tree().process_frame
+	if not is_inside_tree(): return
 	var main := get_parent()
 	var env: Environment = main.get_node("WorldEnvironment").environment
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
@@ -38,7 +39,7 @@ func _ready() -> void:
 	window_light.spot_attenuation = 1.5
 	window_light.shadow_enabled = false
 	main.add_child(window_light)
-	window_light.look_at(Vector3(0, 0.9, 1.5))
+	window_light.rotation = Basis.looking_at(Vector3(0, 0.9, 1.5) - window_light.position, Vector3.UP).get_euler()
 
 func _process(_delta: float) -> void:
 	var strength := pow(GameManager.ocean_health / 100.0, 2.0) * exp(-float(GameManager.depth) * 0.4)

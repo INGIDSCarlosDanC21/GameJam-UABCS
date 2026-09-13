@@ -3,3 +3,6 @@
 .DS_Store
 Thumbs.db
 export/
+android/
+*~RF*.TMP
+/libgodotopenxrvendors.dll

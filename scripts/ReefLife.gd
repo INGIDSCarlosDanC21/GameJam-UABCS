@@ -10,6 +10,7 @@ var _materials: Array[ShaderMaterial] = []
 var _clock := 0.0
 var _rng := RandomNumberGenerator.new()
 var _mobile := OS.has_feature("android")
+var _illumination := 1.0
 
 func _ready() -> void:
 	name = "ReefLife"
@@ -25,9 +26,23 @@ func _ready() -> void:
 			center += Vector3(_rng.randf_range(-0.7, 0.7), _rng.randf_range(-0.65, 0.65), _rng.randf_range(-0.6, 0.6))
 			var radius := Vector2(3.0, 7.0) if school >= 3 else Vector2(5.2 + school * 0.8, 2.0 + (school % 2) * 0.5)
 			_swimmer(FISH[school % FISH.size()], _rng.randf_range(0.38, 0.72), center, radius, school * 1.7 + member * 0.12, 0.085 + school * 0.012)
+			# Fish1 is the imported anglerfish, not a generic reef fish.
+			if school % FISH.size() == 0:
+				_swimmers[-1]["min_depth"] = 12
+				_swimmers[-1]["max_depth"] = 1000000
+				if member == 0:
+					var glow := OmniLight3D.new()
+					glow.add_to_group("self_lit")
+					glow.light_color = Color("b2efba")
+					glow.light_energy = 1.8
+					glow.omni_range = 3.5
+					glow.shadow_enabled = false
+					_swimmers[-1].node.add_child(glow)
 	_swimmer(MANTA, 3.8, Vector3(0, 5.2, -22), Vector2(11, 4.0), 0.4, 0.062)
+	_swimmers[-1]["min_depth"] = 8
 	for index in (2 if _mobile else 3):
 		_swimmer(DOLPHIN, 2.6, Vector3(-3 + index * 1.8, 3.2 + index * 0.7, -27), Vector2(12 + index, 3.6), 2.0 + index * 0.2, 0.073)
+		_swimmers[-1]["min_depth"] = 5
 	_update_swimmers(0.0)
 
 func _source_transform(node: Node3D, scene: Node3D) -> Transform3D:
@@ -99,8 +114,12 @@ func _swimmer(packed: PackedScene, length: float, center: Vector3, radius: Vecto
 	var pivot := Node3D.new()
 	pivot.name = "BackgroundAnimal"
 	add_child(pivot)
+	pivot.add_to_group("photographic_fauna")
+	var species_by_model := {"Dolphin.fbx":"delfín","Shark.glb":"tiburón","Whale.glb":"ballena","Manta ray.fbx":"mantarraya gigante","Fish1.fbx":"pez linterna","Fish2.fbx":"pez azul","Fish3.fbx":"pez payaso"}
+	pivot.set_meta("photo_species",species_by_model.get(packed.resource_path.get_file(),""))
 	var model := packed.instantiate() as Node3D
 	pivot.add_child(model)
+	preload("res://scripts/MarineMaterials.gd").prepare(model)
 	var bounds := AABB()
 	var first := true
 	for mesh in model.find_children("*", "MeshInstance3D", true, false):
@@ -125,16 +144,23 @@ func _swimmer(packed: PackedScene, length: float, center: Vector3, radius: Vecto
 	# Imported Quaternius models face +Z, opposite Godot's camera-forward axis.
 	model.rotation.y = PI
 	model.position = Basis(Vector3.UP, PI) * model.position
-	_swimmers.append({"node": pivot, "center": center, "radius": radius, "phase": phase, "speed": speed, "pattern": _swimmers.size() % 3, "direction": -1.0 if _swimmers.size() % 2 == 0 else 1.0})
+	_swimmers.append({"slot": _swimmers.size(), "node": pivot, "center": center, "radius": radius, "phase": phase, "speed": speed, "pattern": _swimmers.size() % 3, "direction": -1.0 if _swimmers.size() % 2 == 0 else 1.0})
 
 func _process(delta: float) -> void:
 	_clock += delta * GameManager.world_time_scale()
 	_update_swimmers(_clock)
 	var illumination := maxf(0.02, pow(GameManager.ocean_health / 100.0, 2.0))
 	if GameManager.stun_left > 0: illumination *= 0.025
+	_illumination = lerpf(_illumination,illumination,1.0-exp(-delta*3))
+	for plant in get_children():
+		if plant is MultiMeshInstance3D:
+			var ratio := 1.0
+			if GameManager.play_mode == GameManager.PlayMode.EDUCATIONAL:
+				ratio = (.25 if GameManager.depth < 5 else (1.0 if GameManager.depth < 10 else .15)) if str(plant.name).begins_with("Kelp") else (1.0 if GameManager.depth < 5 else .35)
+			plant.multimesh.visible_instance_count = maxi(1,int(plant.multimesh.instance_count*ratio*([.35,.65,1.0][PlayerJournal.detail])))
 	for material in _materials:
 		material.set_shader_parameter("depth_level", float(GameManager.depth))
-		material.set_shader_parameter("ecosystem_light", illumination)
+		material.set_shader_parameter("ecosystem_light", _illumination)
 		material.set_shader_parameter("world_height", global_position.y)
 
 func _update_swimmers(clock: float) -> void:
@@ -142,6 +168,7 @@ func _update_swimmers(clock: float) -> void:
 		var animal: Node3D = swimmer.node
 		# Retire shallow fauna in the abyss instead of rendering invisible animals.
 		animal.visible = GameManager.depth >= int(swimmer.get("min_depth", 0)) and GameManager.depth < int(swimmer.get("max_depth", 15))
+		if PlayerJournal.detail < 2 and int(swimmer.slot) % (3-PlayerJournal.detail) != 0: animal.visible = false
 		animal.process_mode = Node.PROCESS_MODE_INHERIT if animal.visible else Node.PROCESS_MODE_DISABLED
 		if not animal.visible: continue
 		var t: float = clock * swimmer.speed * swimmer.direction + swimmer.phase
@@ -149,6 +176,17 @@ func _update_swimmers(clock: float) -> void:
 		var frequency := 2.0 if swimmer.pattern == 1 else 1.0
 		var rise := 0.65 if swimmer.pattern == 2 else 0.32
 		animal.position = swimmer.center + Vector3(cos(t) * radius.x, sin(t * 2.0) * rise, sin(t * frequency) * radius.y)
+		animal.position.y = maxf(animal.position.y, get_parent()._height(animal.position.x, animal.position.z) + 1.1)
 		var tangent := (Vector3(-sin(t) * radius.x, cos(t * 2.0) * rise * 2.0, cos(t * frequency) * radius.y * frequency) * float(swimmer.direction)).normalized()
 		animal.basis = Basis.looking_at(tangent, Vector3.UP)
 		animal.rotate_object_local(Vector3.FORWARD, sin(t) * 0.075)
+	# Resolve local crowding without physics bodies or collision meshes.
+	for index in _swimmers.size():
+		var animal: Node3D = _swimmers[index].node
+		if not animal.visible: continue
+		for other_index in index:
+			var other: Node3D = _swimmers[other_index].node
+			if not other.visible: continue
+			var difference := animal.position - other.position
+			if difference.length_squared() < 0.49:
+				animal.position.y = other.position.y + 0.7

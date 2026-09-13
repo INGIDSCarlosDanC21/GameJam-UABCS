@@ -21,6 +21,8 @@ func run() -> void:
 	root.add_child(main)
 	current_scene = main
 	await create_timer(0.5).timeout
+	main.get_node("ExpeditionTutorial").set_process(false)
+	root.get_node("GameManager").tutorial_active = false
 	if DisplayServer.get_name() != "headless":
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png("res://.godot/cabin-preview.png")
@@ -74,7 +76,7 @@ func run() -> void:
 	check(session._descent_left > 0 and session._rumble.playing, "descent starts timed movement and sound")
 	session._update_descent(4.0)
 	check(session._camera.h_offset == 0 and session._camera.v_offset == 0, "descent restores camera offsets")
-	check(gm.fish_stats(0,1,3).reward > gm.fish_stats(0,1,0).reward, "gold aura raises reward")
+	check(gm.fish_stats(0,1,3).reward == gm.fish_stats(0,1,0).reward, "legacy aura no longer changes reward")
 	seed(70)
 	var shallow = entity(main,0,"pez azul",Vector3(0,1.5,-3))
 	shallow._animate_swimming(0.1)
@@ -104,10 +106,13 @@ func run() -> void:
 	await process_frame
 	check(gm.fish_stats(0, 1.0).damage == 1.2, "easy starting damage")
 	for i in range(24): gm.progress()
-	check(gm.level == 5 and gm.depth == 1, "level five automatically descends")
+	check(gm.level == 5 and gm.depth == 0, "educational depth follows ecosystem schedule rather than catches")
 	check(not gm.descend() and gm.cleaner_quality() == 1, "first robot quality remains until level ten")
 	var fish = entity(main, 0, "pez azul", Vector3(0,1.5,-3.5))
 	var trash = entity(main, 1, "lata", fish.position)
+	session._contamination()
+	check(not fish.unsuitable, "newly arrived fish protected from contamination")
+	fish._age = 7.0
 	session._contamination()
 	check(fish.unsuitable and fish.collision_layer == 0, "trash contact disables fish")
 	fish._animate_swimming(0.1)
@@ -143,6 +148,7 @@ func run() -> void:
 	robot.age = 60.1
 	robot._physics_process(0.02)
 	check(is_instance_valid(robot) and gm.active_cleaners == 1, "robot remains active after sixty seconds")
+	gm.depth = 12
 	var lantern = entity(main, 0, "pez linterna", Vector3(0,1.5,-3))
 	lantern.make_unsuitable()
 	check(not lantern._local_light.visible, "unsuitable lantern switches off")
@@ -167,7 +173,9 @@ func run() -> void:
 	cleaner.global_position = Vector3(8, 1.0, -8)
 	jelly.on_click()
 	check(jelly.triggered and jelly.collision_layer == 0, "jellyfish discharges once touched")
-	check(cleaner.paralyzed_left >= 5.0 and cleaner.get_child_count() > 1, "jellyfish electrifies nearby cleaners for five seconds")
+	var robots := get_nodes_in_group("cleaners")
+	var frozen := robots.filter(func(robot): return robot.paralyzed_left >= 5.0)
+	check(frozen.size() == ceili(robots.size() * 0.5), "jellyfish freezes half of the fleet")
 	jelly._physics_process(1.1)
 	check(jelly.leaving, "jellyfish leaves after discharge")
 	var octopus = entity(main, 0, "pulpo", Vector3(0, 1.5, -3))
@@ -234,6 +242,8 @@ func run() -> void:
 	gm._set_health(20)
 	await create_timer(0.3).timeout
 	check(session._env.background_energy_multiplier < 1, "low health darkens background")
+	gm.recovery_left = 0.0
+	gm._damage_cooldown = 0.0
 	gm._set_health(0)
 	gm.clean_trash()
 	check(gm.defeated and gm.ocean_health == 0 and session._restart.visible, "terminal defeat and restart menu")
@@ -247,6 +257,8 @@ func run() -> void:
 	await create_timer(1).timeout
 	check(is_instance_valid(current_scene) and current_scene != main and gm.level == 1 and gm.depth == 0 and gm.ocean_health == 100 and not gm.defeated, "restart resets run")
 	current_scene.get_node("Spawner").set_process(false)
+	current_scene.get_node("ExpeditionTutorial").set_process(false)
+	gm.tutorial_active = false
 	check(gm.robots_deployed == 0 and not gm.expedition_finished and gm.expedition_left > 298, "restart resets expedition")
 	gm.waste_removed = gm.WASTE_GOAL
 	gm.advance_expedition(31)
@@ -260,6 +272,8 @@ func run() -> void:
 	check(gm.conservation_time == 0, "low health breaks conservation streak")
 	gm._set_health(80)
 	gm.advance_expedition(30)
+	check(not gm.expedition_finished, "completed objectives allow visiting remaining ecosystems")
+	gm.advance_expedition(gm.expedition_left)
 	check(gm.expedition_finished and gm.expedition_success and not gm.defeated, "all three objectives win the expedition")
 	coins = gm.coins
 	gm.catch_fish()
@@ -272,6 +286,8 @@ func run() -> void:
 		root.get_texture().get_image().save_png("res://.godot/mission-preview.png")
 	gm.restart()
 	await create_timer(0.5).timeout
+	current_scene.get_node("ExpeditionTutorial").set_process(false)
+	gm.tutorial_active = false
 	gm.advance_expedition(300)
 	check(gm.expedition_finished and not gm.expedition_success and not gm.defeated, "time limit ends incomplete mission without ecological defeat")
 	print("FAILURES: ", failures)

@@ -17,6 +17,7 @@ var _alarm_voice: AudioStreamPlayer3D
 var _cooldowns: Dictionary = {}
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	add_to_group("sound_hub")
 	var folder := "res://assets/audio/arcade/"
 	if not button_touch: button_touch = load(folder + "click_001.ogg")
@@ -30,9 +31,15 @@ func _ready() -> void:
 	_sounds["oracle"] = preload("res://scripts/FeedbackTone.gd").make_tone(780.0, 180.0, 0.85)
 	_sounds["flashlight"] = preload("res://scripts/FeedbackTone.gd").make_tone(320.0, 950.0, 0.32)
 	_sounds["robot_clean"] = preload("res://scripts/FeedbackTone.gd").make_tone(180, 460, 0.18)
+	_sounds["fish_hurt"] = preload("res://scripts/FeedbackTone.gd").make_tone(380, 120, 0.3)
+	_sounds["scan"] = preload("res://scripts/FeedbackTone.gd").make_tone(500, 900, 0.25)
+	_sounds["shutter"] = preload("res://scripts/FeedbackTone.gd").make_tone(1800, 120, 0.12)
+	_sounds["objective"] = preload("res://scripts/FeedbackTone.gd").make_tone(440, 880, 0.5)
+	for species in ["pez azul", "pez naranja", "pez payaso", "pez linterna", "pez dorado millonario"]:
+		_sounds[species] = preload("res://scripts/FeedbackTone.gd").make_tone(300 + _sounds.size() * 12, 650, 0.16)
 	_sounds["storm"] = preload("res://scripts/FeedbackTone.gd").make_tone(95, 30, 1.4)
 	for milestone in range(1, 7):
-		_sounds["encounter_" + str(milestone)] = preload("res://scripts/FeedbackTone.gd").make_tone(420.0 / milestone, 180.0 / milestone, 1.0 + milestone * 0.15)
+		_sounds["encounter_" + str(milestone)] = preload("res://scripts/FeedbackTone.gd").make_tone(240.0 - milestone * 15.0, 110.0 - milestone * 7.0, 1.0 + milestone * 0.2)
 	_sounds["electric"] = preload("res://assets/audio/effects/jellyfish_electric_cc0.wav")
 	for index in 8:
 		var voice := AudioStreamPlayer.new()
@@ -65,7 +72,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	for event in _cooldowns.keys(): _cooldowns[event] = maxf(0.0, float(_cooldowns[event]) - delta)
-	if GameManager.is_run_over() or GameManager.ocean_health >= 30:
+	if get_tree().paused or GameManager.is_run_over() or GameManager.ocean_health >= 50:
 		_alarm_voice.stop()
 	else:
 		play_event("alarm")
@@ -85,7 +92,7 @@ func _allow(event: String, interval: float) -> bool:
 
 func play_event(event: String) -> void:
 	if event == "alarm":
-		if GameManager.is_run_over() or GameManager.ocean_health >= 30: return
+		if GameManager.is_run_over() or GameManager.ocean_health >= 50: return
 		if not _alarm_voice.playing and _allow(event, 1.1): _alarm_voice.play()
 		return
 	var stream := _stream(event)
@@ -97,10 +104,11 @@ func play_event(event: String) -> void:
 		if not candidate.playing:
 			voice = candidate
 			break
-	if voice == null and ui and event != "touch": voice = pool[0]
+	if voice == null and ((ui and event != "touch") or event.begins_with("encounter_")): voice = pool[0]
 	if voice == null: return
 	voice.stream = stream
 	voice.volume_db = interface_volume_db if ui else effects_volume_db
+	if event.begins_with("encounter_"): voice.volume_db = -1.0
 	voice.pitch_scale = _varied_pitch(event)
 	voice.play()
 

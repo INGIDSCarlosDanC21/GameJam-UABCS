@@ -29,7 +29,7 @@ func _process(delta: float) -> void:
 	if remaining <= 0.0: return
 	remaining = maxf(0.0, remaining - delta)
 	clock += delta
-	visible = remaining > 0.0
+	visible = remaining > 0.0 and PlayerJournal.particles
 	var envelope := sin(PI * remaining / 3.5)
 	for index in multimesh.instance_count:
 		var phase := float(index) * 2.39996

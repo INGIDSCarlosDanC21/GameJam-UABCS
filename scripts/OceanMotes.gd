@@ -1,6 +1,8 @@
 extends MultiMeshInstance3D
 ## Bounded, single-draw ambient particles outside the cabin.
 func _ready() -> void:
+	add_to_group("optional_particles")
+	visible = PlayerJournal.particles
 	var mesh := SphereMesh.new()
 	mesh.radius = 0.009
 	mesh.height = 0.018

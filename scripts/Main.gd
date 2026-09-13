@@ -3,7 +3,6 @@ extends Node3D
 @onready var _sky_vp: SubViewport = $SkyViewport
 @onready var _video: VideoStreamPlayer = $SkyViewport/VideoStreamPlayer
 @onready var _world_env: WorldEnvironment = $WorldEnvironment
-@onready var _hud: Label3D = $Cabin/StatusLabel
 
 
 func _ready() -> void:
@@ -23,6 +22,9 @@ func _ready() -> void:
 	var pause_button := Area3D.new()
 	pause_button.set_script(preload("res://scripts/PauseButton.gd"))
 	$Cabin.add_child(pause_button)
+	var restart_pause := Area3D.new()
+	restart_pause.set_script(preload("res://scripts/PauseRestart.gd"))
+	$Cabin.add_child(restart_pause)
 	var snail_shake := Node.new()
 	snail_shake.set_script(preload("res://scripts/SnailShake.gd"))
 	add_child(snail_shake)
@@ -31,9 +33,15 @@ func _ready() -> void:
 	var hands := Node.new()
 	hands.set_script(preload("res://scripts/HandTouchButtons.gd"))
 	add_child(hands)
-	GameManager.coins_changed.connect(_refresh_hud)
-	GameManager.ocean_health_changed.connect(_on_health)
-	_refresh_hud(GameManager.coins)
+	var extras := Node3D.new()
+	extras.set_script(preload("res://scripts/ExpeditionExtras.gd"))
+	add_child(extras)
+	var research_camera := Area3D.new()
+	research_camera.set_script(preload("res://scripts/ResearchCamera.gd"))
+	add_child(research_camera)
+	var tutorial := Node3D.new()
+	tutorial.set_script(preload("res://scripts/ExpeditionTutorial.gd"))
+	add_child(tutorial)
 	if not GameManager.mode_selected:
 		var menu := Node3D.new()
 		menu.set_script(preload("res://scripts/ModeMenu.gd"))
@@ -85,13 +93,6 @@ func _setup_sky() -> void:
 	var ocean := Node3D.new()
 	ocean.set_script(preload("res://scripts/OceanWorld.gd"))
 	add_child(ocean)
-
-func _refresh_hud(_coins: int) -> void:
-	_hud.text = "Monedas: %d\nSalud océano: %d" % [_coins, int(GameManager.ocean_health)]
-
-
-func _on_health(_v: float) -> void:
-	_refresh_hud(GameManager.coins)
 
 func _setup_music() -> void:
 	# SoundHub owns the dynamic score; retained scene node stays available to artists.
